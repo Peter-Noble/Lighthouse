@@ -1,13 +1,15 @@
-from PySide6 import QtGui
-from PySide6.QtWidgets import QWidget, QApplication, QLabel, QVBoxLayout, QComboBox, QMainWindow, QDialog, QDialogButtonBox
-from PySide6.QtGui import QPixmap, QAction, QIcon
+from PySide6.QtWidgets import (
+    QWidget, QApplication, QLabel, QVBoxLayout, QComboBox,
+    QMainWindow, QDialog, QDialogButtonBox
+)
+from PySide6.QtGui import QAction, QIcon
 from PySide6.QtMultimedia import QMediaDevices, QMediaCaptureSession, QVideoSink, QVideoFrame, QCamera
 from PySide6.QtMultimediaWidgets import QVideoWidget
 import sys
 import cv2
 from PySide6.QtCore import Signal, Slot, Qt, QThread, QObject
 import numpy as np
-import ptvsd
+# import ptvsd  # ptvsd.debug_this_thread()
 from araviq6 import VideoFrameWorker, VideoFrameProcessor
 
 
@@ -55,11 +57,6 @@ class App(QMainWindow):
         self.disply_width = 1920
         self.display_height = 1080
 
-        self.availableCameras = []
-        cameras = QMediaDevices.videoInputs()
-        for cameraDevice in cameras:
-            self.availableCameras.append(cameraDevice.description())
-
         vbox = QVBoxLayout()
 
         central = QWidget()
@@ -90,28 +87,19 @@ class App(QMainWindow):
         #   frames back to QT video to save processing power.
 
         self.captureSession.setVideoSink(self.cameraVideoSink)
-        self.cameraVideoSink.videoFrameChanged.connect(
-            self.frameProcessor.processVideoFrame
-        )
-        self.frameProcessor.videoFrameProcessed.connect(
-            self.displayVideoFrame)
+        self.cameraVideoSink.videoFrameChanged.connect(self.frameProcessor.processVideoFrame)
+        self.frameProcessor.videoFrameProcessed.connect(self.displayVideoFrame)
         self.frameProcessor.setWorker(self.cameraProcessor)
 
         self.camera.start()
 
         # https://icons8.com/icon/set/lighthouse/cotton
-        self.lighthouseAction = QAction(
-            QIcon("images/icons/icons8-lighthouse-64.png"), "&Lighthouse", self)
-        self.newAction = QAction(
-            QIcon("images/icons/icons8-one-page-64.png"), "&New", self)
-        self.openAction = QAction(
-            QIcon("images/icons/icons8-folder-64.png"), "&Open", self)
-        self.changeCameraAction = QAction(
-            QIcon("images/icons/icons8-documentary-64.png"), "&Change Camera", self)
-        self.changeCameraAction.triggered.connect(
-            self.cameraChangedActionCallback)
-        self.exitAction = QAction(
-            QIcon("images/icons/icons8-cancel-64.png"), "&Exit", self)
+        self.lighthouseAction = QAction(QIcon("images/icons/icons8-lighthouse-64.png"), "&Lighthouse", self)
+        self.newAction = QAction(QIcon("images/icons/icons8-one-page-64.png"), "&New", self)
+        self.openAction = QAction(QIcon("images/icons/icons8-folder-64.png"), "&Open", self)
+        self.changeCameraAction = QAction(QIcon("images/icons/icons8-documentary-64.png"), "&Change Camera", self)
+        self.changeCameraAction.triggered.connect(self.cameraChangedActionCallback)
+        self.exitAction = QAction(QIcon("images/icons/icons8-cancel-64.png"), "&Exit", self)
         self.exitAction.triggered.connect(self.exitActionCallback)
 
         fileToolBar = self.addToolBar("File")
@@ -125,11 +113,32 @@ class App(QMainWindow):
         self.close()
 
     def cameraChangedActionCallback(self, s):
-        dialog = CameraSelectDialog(self.availableCameras)
+        dialog = CameraSelectDialog([c.description() for c in QMediaDevices.videoInputs()])
         if (dialog.exec()):
-            # TODO is this a race condition?  Does this need communicating over a Signal/Slot?
-            # self.video_capture_thread.cam_id = dialog.getCameraId() TODO do something with the new camera ID
-            pass
+            self.camera.stop()
+
+            # TODO a bit of a crude way to achieve this.
+            #   Find out how to change the camera without rebuilding the whole pipeline.
+            del self.camera
+            del self.captureSession
+            del self.cameraVideoSink
+            self.frameProcessor.stop()
+            del self.frameProcessor
+            del self.cameraProcessor
+
+            self.camera = QCamera()
+            self.captureSession = QMediaCaptureSession()
+            self.cameraVideoSink = QVideoSink()
+            self.frameProcessor = VideoFrameProcessor()
+            self.cameraProcessor = CameraProcessorWorker()
+
+            self.camera = QCamera(QMediaDevices.videoInputs()[dialog.getCameraId()])
+            self.captureSession.setCamera(self.camera)
+            self.captureSession.setVideoSink(self.cameraVideoSink)
+            self.cameraVideoSink.videoFrameChanged.connect(self.frameProcessor.processVideoFrame)
+            self.frameProcessor.videoFrameProcessed.connect(self.displayVideoFrame)
+            self.frameProcessor.setWorker(self.cameraProcessor)
+            self.camera.start()
 
     @Slot(QVideoFrame)
     def displayVideoFrame(self, frame: QVideoFrame):
