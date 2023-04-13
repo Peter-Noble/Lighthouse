@@ -1,16 +1,17 @@
-from PySide6.QtWidgets import (
-    QWidget, QApplication, QLabel, QVBoxLayout, QComboBox,
-    QMainWindow, QDialog, QDialogButtonBox
-)
-from PySide6.QtGui import QAction, QIcon
-from PySide6.QtMultimedia import QMediaDevices, QMediaCaptureSession, QVideoSink, QVideoFrame, QCamera
-from PySide6.QtMultimediaWidgets import QVideoWidget
 import sys
+
 import cv2
-from PySide6.QtCore import Signal, Slot, Qt, QThread, QObject
 import numpy as np
 # import ptvsd  # ptvsd.debug_this_thread()
-from araviq6 import VideoFrameWorker, VideoFrameProcessor
+from araviq6 import VideoFrameProcessor, VideoFrameWorker
+from PySide6.QtCore import Slot
+from PySide6.QtGui import QAction, QIcon
+from PySide6.QtMultimedia import (QCamera, QMediaCaptureSession, QMediaDevices,
+                                  QVideoFrame, QVideoSink)
+from PySide6.QtMultimediaWidgets import QVideoWidget
+from PySide6.QtWidgets import (QApplication, QComboBox, QDialog,
+                               QDialogButtonBox, QLabel, QMainWindow,
+                               QVBoxLayout, QWidget)
 
 
 class CameraSelectDialog(QDialog):
