@@ -10,8 +10,8 @@ try:
     camera_matrix = np.load(path.join(calibrations_file_dir, fn1))
     camera_dist = np.load(path.join(calibrations_file_dir, fn2))
 except FileNotFoundError:
-    calib_mat = None
-    dist = None
+    camera_matrix = None
+    camera_dist = None
 print("\nCamera Calibration Matrix Imported:")
 print(camera_matrix)
 
