@@ -47,7 +47,8 @@ def onMouseDuringOperation(event, x, y, flags, param):
         img_pt = [x, y, 1]
         t_x, t_y, t_z = np.array(np.dot(H, img_pt))
         target_world_geometry = [t_x / t_z, t_y / t_z, 0]
-        print("\nImage pt: {} in stage coordinate system: \n{}".format((x, y), target_world_geometry))
+        print("\nImage pt: {} in stage coordinate system: \n{}".format(
+            (x, y), target_world_geometry))
 
 
 cv.setMouseCallback(op_window, onMouseDuringSetup)
@@ -58,7 +59,7 @@ if cap.isOpened():
         ret, frame = cap.read()
 
         cv.putText(frame, "Please align the camera, then press 'a' to begin", (10, 25),
-                   cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, 8)
+                   cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, 8)
 
         # display frames to operator
         cv.imshow(op_window, frame)
@@ -74,7 +75,7 @@ if cap.isOpened():
             ret, frame = cap.read()
 
             cv.putText(frame, "Select the location of corner '" + label + "' then press 'a'", (10, 25),
-                       cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, 8)
+                       cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, 8)
 
             # display frames to operator
             cv.imshow(op_window, frame)
@@ -88,11 +89,13 @@ if cap.isOpened():
                 exit(0)
 
     src = np.array(list(stage_corners_pixel_locs.values()), dtype=np.float32)
-    dst = np.array(list(stage_corners_world_geometry.values()), dtype=np.float32)
+    dst = np.array(list(stage_corners_world_geometry.values()),
+                   dtype=np.float32)
 
     # If calibrated camera, account for distortion parameters:
     if camera_matrix is not None:
-        src = cv.undistortPoints(np.expand_dims(src, axis=1), camera_matrix, camera_dist, None, camera_matrix)
+        src = cv.undistortPoints(np.expand_dims(
+            src, axis=1), camera_matrix, camera_dist, None, camera_matrix)
 
     # Homography relation between real world planar surface of stage and imaging plane (camera sensor)
     H, _ = cv.findHomography(src, dst)
@@ -106,7 +109,7 @@ if cap.isOpened():
         ret, frame = cap.read()
 
         cv.putText(frame, "Press 'x' to exit", (10, 25),
-                   cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, 8)
+                   cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, 8)
 
         # display frames to operator
         cv.imshow(op_window, frame)

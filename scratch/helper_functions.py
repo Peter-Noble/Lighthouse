@@ -27,7 +27,8 @@ class Camera:
 
     def __init__(self, device=0, exposure=-4, width=1920, height=1080):
         self.capture = init_camera_capture(device, exposure, width, height)
-        thread = threading.Thread(target=self.cam_buffer, args=(), name="read_thread")
+        thread = threading.Thread(
+            target=self.cam_buffer, args=(), name="read_thread")
         thread.daemon = True
         thread.start()
 
@@ -82,7 +83,8 @@ def init_camera_capture(device=0, exposure=-5, width=1920, height=1080):
     :return: (VideoCapture) the object from which video frames can be read
     """
     # Setup capture device
-    cap = cv.VideoCapture(device, apiPreference=cv.CAP_DSHOW)
+    # cap = cv.VideoCapture(device, apiPreference=cv.CAP_DSHOW)
+    cap = cv.VideoCapture(device)
 
     if not cap.isOpened():
         print("Cannot open camera")
@@ -107,7 +109,8 @@ def init_camera_capture(device=0, exposure=-5, width=1920, height=1080):
 # define storage locations
 scripts_file_dir = get_file_dir()
 media_file_dir = scripts_file_dir.replace("scripts", "media")
-calibrations_file_dir = scripts_file_dir.replace("scripts", "calibration_saved_params")
+calibrations_file_dir = scripts_file_dir.replace(
+    "scripts", "calibration_saved_params")
 
 
 def post_display_tidy(cap, out=None):
@@ -119,8 +122,9 @@ def post_display_tidy(cap, out=None):
 
 
 def create_display_window(name="Stage View", res=(1280, 720), offset=(0, 0)):
-    cv.namedWindow(name, cv.WND_PROP_FULLSCREEN)
-    cv.setWindowProperty(name, cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+    # cv.namedWindow(name, cv.WND_PROP_FULLSCREEN)
+    cv.namedWindow(name)
+    # cv.setWindowProperty(name, cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
     cv.resizeWindow(name, res[0], res[1])
     cv.moveWindow(name, offset[0], offset[1])
     blank_img = np.zeros((720, 1280, 3), np.uint8) + 100
@@ -157,4 +161,3 @@ def read_params_from_npy(fn1='calibration_matrix.npy', fn2='distortion_coefficie
     print("Camera Calibration Matrix Imported:")
     print(calib_mat)
     return calib_mat, dist
-

@@ -19,7 +19,7 @@ pip install -r requirements.txt
 VSCode extensions:
 - CodeLLDB
 - Python
-- isort
+- Black Formatter (switched to format on save)
 - Pylance
 
 Change default python autoformatter to autopep8 with format on save switched on.
