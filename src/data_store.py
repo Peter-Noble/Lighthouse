@@ -1,4 +1,4 @@
-from PySide6.QtCore import Signal, Slot, Qt, QPoint, QMutex, QObject
+from PySide6.QtCore import Signal, Slot, Qt, QPoint, QObject
 from PySide6.QtGui import QVector2D, QVector3D
 from PySide6.QtWidgets import QLabel
 

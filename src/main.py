@@ -21,6 +21,7 @@ from PySide6.QtGui import (
     QColor,
     QPen,
     QBrush,
+    QVector3D,
 )
 from PySide6.QtMultimedia import (
     QCamera,
@@ -51,6 +52,7 @@ from camera_select_dialog import CameraSelectDialog
 from settings_dock import SettingsDock
 from video_display_widget import VideoDisplayWidget
 from data_store import DataStore
+from psn_output import PSNOutput
 
 
 class App(QMainWindow):
@@ -94,6 +96,10 @@ class App(QMainWindow):
         self.open_action = QAction(
             QIcon("src/images/icons/icons8-folder-64.png"), "&Open", self
         )
+        self.psn_action = QAction(
+            QIcon("src/images/icons/icons8-track-order-64.png"), "&Change Camera", self
+        )
+        self.psn_action.triggered.connect(self.psnActionCallback)
         self.change_camera_action = QAction(
             QIcon("src/images/icons/icons8-documentary-64.png"), "&Change Camera", self
         )
@@ -107,6 +113,7 @@ class App(QMainWindow):
         file_tool_bar.addAction(self.lighthouse_action)
         file_tool_bar.addAction(self.new_action)
         file_tool_bar.addAction(self.open_action)
+        file_tool_bar.addAction(self.psn_action)
         file_tool_bar.addAction(self.change_camera_action)
         file_tool_bar.addAction(self.exit_action)
         file_tool_bar.setMovable(False)
@@ -125,8 +132,46 @@ class App(QMainWindow):
 
         self.data.broadcast()
 
+        self.psn_output = PSNOutput()
+        self.psn_output.addTrack()
+
     def exitActionCallback(self, s):
         self.close()
+
+    def psnActionCallback(self, s):
+        # Euclidean Coordinates of the tracker current position.
+        # Positive x is right, positive y is up and Positive z is depth.
+        # Position is expressed in meters (m).
+        pos = QVector3D(0, 0, 0)
+        # Velocity is expressed in meters per second (m/s).
+        # speed = QVector3D(0, 0, 0)
+        speed = None
+        # The tracker current X acceleration.
+        # Acceleration is expressed in meters per second squared.
+        # accel = QVector3D(0, 0, 0)
+        accel = None
+        # A vector indicating an axis around which the tracker is rotated.
+        # The vector’s length is the amount of rotation in radians.
+        # The orientation is absolute and not cumulated from packet to packet.
+        # ori = QVector3D(0, 0, 0)
+        ori = None
+        # A 32-bit float representing the tracker’s validity.
+        # status = 0
+        status = None
+        # Position of the target that the tracker is trying to reach.
+        # Position is expressed in meters.
+        # target_pos = QVector3D(0, 0, 0)
+        target_pos = None
+        # This is the number of microseconds elapsed since the PSN server
+        # was started to the moment the tracker position was computed.
+        # Since some trackers can be computed at different times or even
+        # repeated across different frames, this timestamp is usually more accurate.
+        # If this field is not present, you can simply use the packet timestamp as a fallback.
+        # timestamp = 0
+        timestamp = None
+        self.psn_output.setTrack(
+            0, pos, speed, accel, ori, status, target_pos, timestamp
+        )
 
     def initCamera(self, id=-1):
         # TODO a bit of a crude way to achieve this.
