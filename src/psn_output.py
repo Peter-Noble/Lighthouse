@@ -49,6 +49,8 @@ class PSNOutput(QObject):
         self.timer.start(1000 / self.transmit_frequency)
 
     def addTrack(self) -> None:
+        if no_psn:
+            return
         self.tracks[len(self.tracks)] = psn.Tracker(
             len(self.tracks), f"Tracker {len(self.tracks)}"
         )
@@ -64,7 +66,9 @@ class PSNOutput(QObject):
         status: float | None,
         target_pos: QVector3D | None,
         timestamp: float | None,
-    ):
+    ) -> None:
+        if no_psn:
+            return
         tracker = self.tracks[id]
         if pos is not None:
             tracker.set_pos(psn.Float3(pos.x(), pos.y(), pos.z()))
