@@ -26,7 +26,7 @@ stage_corners_pixel_locs = {}
 
 # Instantiate camera and operator window
 print("\n[info] Initialising Camera Input, Please Wait...")
-cap = fn.Camera(1, -2, 1280, 720)
+cap = fn.Camera(0, -2, 1280, 720)
 op_window, w, h = fn.create_display_window("Operator View", (1280, 720))
 print("\n[info] Camera Initialised. Please Follow The Onscreen Instructions.")
 

@@ -106,6 +106,9 @@ class PSNOutput(QObject):
         packets.extend(self.encoder.encode_data(self.tracks, time_stamp))
 
         for packet in packets:
-            self.sock.sendto(
-                packet, (PSN_DEFAULT_UDP_MULTICAST_ADDR, PSN_DEFAULT_UDP_PORT)
-            )
+            try:
+                self.sock.sendto(
+                    packet, (PSN_DEFAULT_UDP_MULTICAST_ADDR, PSN_DEFAULT_UDP_PORT)
+                )
+            except OSError as err:
+                continue

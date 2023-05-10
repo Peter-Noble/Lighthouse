@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 from PySide6.QtCore import Signal, Slot, QPoint
+from PySide6.QtGui import QVector3D
 
 from data_store import HomographyPoint
 
@@ -85,7 +86,7 @@ class SettingsDock(QDockWidget):
                         label.setText(f"{name} {hom}")
                         break
 
-    @Slot(int, QPoint)
-    def updateTrack(self, id: int, pos: QPoint):
+    @Slot(int, QVector3D)
+    def updateTrack(self, id: int, pos: QVector3D):
         label = self.tracks[id]
-        label.setText(f"Track {id}: {pos.x()}, {pos.y()}")
+        label.setText(f"Track {id}: {round(pos.x(), 2)}, {round(pos.y(), 2)}, {round(pos.z(), 2)}")

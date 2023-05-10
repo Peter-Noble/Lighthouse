@@ -96,7 +96,7 @@ except BaseException:
     # if not then just use OpenCV default
 
     print("INFO: camera_stream class not found - camera input may be buffered")
-    cap = funcs.init_camera_capture(1, -2, 1280, 720)
+    cap = funcs.init_camera_capture(args.camera_to_use, -2, 1280, 720)
     #cap = cv2.VideoCapture(0)
 
 # define display window names
