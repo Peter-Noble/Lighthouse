@@ -1,6 +1,7 @@
 from PySide6.QtCore import Signal, Slot, Qt, QPoint, QObject
 from PySide6.QtGui import QVector2D, QVector3D
 from PySide6.QtWidgets import QLabel
+import numpy as np
 
 
 class HomographyPoint:
@@ -27,7 +28,11 @@ class DataStore(QObject):
             "DSR": HomographyPoint(QVector3D(12, 8, 0), QVector2D(0, 0)),
         }
         self._tracks = [QPoint()]
-
+        self._camera_location = np.zeros(3, dtype=np.float32)
+        self._camera_rotation = np.zeros(3, dtype=np.float32)
+        self._camera_matrix = np.identity(3, dtype=np.float32)  # 3x3 camera matrix
+        self._camera_distortion = np.zeros(4, dtype=np.float32)  # 4 vector of distortion coefficients
+        
     def serialise():
         pass
 
