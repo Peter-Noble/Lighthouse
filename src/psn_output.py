@@ -57,7 +57,7 @@ class PSNOutput(QObject):
 
     @Slot(int, QVector3D)
     def setTrackWithPos(self, id: int, pos: QVector3D):
-        self.setTrack(id=id, pos=pos)
+        self.setTrack(id=id, pos=QVector3D(pos.x(), pos.z(), pos.y()))
 
     @Slot(int, QVector3D, QVector3D, QVector3D, QVector3D, float, QVector3D, float)
     def setTrack(
