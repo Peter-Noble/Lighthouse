@@ -87,26 +87,14 @@ class App(QMainWindow):
         self.camera.start()
 
         # https://icons8.com/icon/set/lighthouse/cotton
-        self.lighthouse_action = QAction(
-            QIcon(str((self.data.src_folder/"images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self
-        )
-        self.new_action = QAction(
-            QIcon(str((self.data.src_folder/"images/icons/icons8-one-page-64.png").absolute())), "&New", self
-        )
-        self.open_action = QAction(
-            QIcon(str((self.data.src_folder/"images/icons/icons8-folder-64.png").absolute())), "&Open", self
-        )
-        self.psn_action = QAction(
-            QIcon(str((self.data.src_folder/"images/icons/icons8-track-order-64.png").absolute())), "&Change Camera", self
-        )
-        #self.psn_action.triggered.connect(self.psnActionCallback)
-        self.change_camera_action = QAction(
-            QIcon(str((self.data.src_folder/"images/icons/icons8-documentary-64.png").absolute())), "&Change Camera", self
-        )
+        self.lighthouse_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self)
+        self.new_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-one-page-64.png").absolute())), "&New", self)
+        self.open_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-folder-64.png").absolute())), "&Open", self)
+        self.psn_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-track-order-64.png").absolute())), "&Change Camera", self)
+        # self.psn_action.triggered.connect(self.psnActionCallback)
+        self.change_camera_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-documentary-64.png").absolute())), "&Change Camera", self)
         self.change_camera_action.triggered.connect(self.cameraChangedActionCallback)
-        self.exit_action = QAction(
-            QIcon(str((self.data.src_folder/"images/icons/icons8-cancel-64.png").absolute())), "&Exit", self
-        )
+        self.exit_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-cancel-64.png").absolute())), "&Exit", self)
         self.exit_action.triggered.connect(self.exitActionCallback)
 
         file_tool_bar = self.addToolBar("File")
@@ -122,10 +110,11 @@ class App(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.settings_dock)
         # self.settingsDock.track_changed.connect(self.data.setTrack)
 
+        self.settings_dock.homography_height.valueChanged.connect(self.data.setHomographyHeight)
+        self.settings_dock.height_offset.valueChanged.connect(self.data.setHeightOffset)
+
         self.data.track_changed.connect(self.settings_dock.updateTrack)
-        self.data.homography_points_changed.connect(
-            self.settings_dock.updateHomographyPoints
-        )
+        self.data.homography_points_changed.connect(self.settings_dock.updateHomographyPoints)
 
         self.video_widget.click_position.connect(self.data.setHomographyScreenPoint)
         self.video_widget.click_position.connect(self.data.setTrack0)
@@ -170,9 +159,7 @@ class App(QMainWindow):
         # If this field is not present, you can simply use the packet timestamp as a fallback.
         # timestamp = 0
         timestamp = None
-        self.psn_output.setTrack(
-            0, pos, speed, accel, ori, status, target_pos, timestamp
-        )
+        self.psn_output.setTrack(0, pos, speed, accel, ori, status, target_pos, timestamp)
 
     def initCamera(self, id=-1):
         # TODO a bit of a crude way to achieve this.
@@ -197,9 +184,7 @@ class App(QMainWindow):
         self.camera.start()
 
     def cameraChangedActionCallback(self, s):
-        dialog = CameraSelectDialog(
-            [c.description() for c in QMediaDevices.videoInputs()]
-        )
+        dialog = CameraSelectDialog([c.description() for c in QMediaDevices.videoInputs()])
         if dialog.exec():
             self.initCamera(dialog.getCameraId())
 

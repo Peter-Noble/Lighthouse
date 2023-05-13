@@ -38,9 +38,12 @@ class DataStore(QObject):
         self._camera_matrix = np.identity(3, dtype=np.float32)  # 3x3 camera matrix
         self._camera_distortion = np.zeros(4, dtype=np.float32)  # 4 vector of distortion coefficients
 
+        self.homography_height = 0.0
+        self.height_offset = 0.0
+
         # Attempt to load camera calibration numpy saved files
-        calibration_matrix_file_dir = str((self.src_folder / 'calibration_matrix.npy').absolute())
-        distortion_coefficients_file_dir = str((self.src_folder / 'distortion_coefficients.npy').absolute())
+        calibration_matrix_file_dir = str((self.src_folder / "calibration_matrix.npy").absolute())
+        distortion_coefficients_file_dir = str((self.src_folder / "distortion_coefficients.npy").absolute())
         try:
             self.camera_matrix = np.load(calibration_matrix_file_dir)
             self.camera_dist = np.load(distortion_coefficients_file_dir)
@@ -63,6 +66,14 @@ class DataStore(QObject):
         for id in range(len(self._tracks)):
             self.track_changed.emit(id, self._tracks[id])
 
+    @Slot(float)
+    def setHomographyHeight(self, height: float):
+        self.homography_height = height
+
+    @Slot(float)
+    def setHeightOffset(self, height: float):
+        self.height_offset = height
+
     @Slot(str, HomographyPoint)
     def setHomographyPoint(self, name: str, point: HomographyPoint) -> None:
         self._homography_points[name] = point
@@ -75,9 +86,7 @@ class DataStore(QObject):
         if settings_dock.edit_homography_points.checkState() is Qt.CheckState.Unchecked:
             return
 
-        item_widget = settings_dock.list_widget.itemWidget(
-            settings_dock.list_widget.currentItem()
-        )
+        item_widget = settings_dock.list_widget.itemWidget(settings_dock.list_widget.currentItem())
         name = item_widget.findChildren(QLabel)[0].objectName()
 
         self._homography_points[name].screen_coord = point
@@ -109,8 +118,7 @@ class DataStore(QObject):
 
         # If calibrated camera, account for distortion parameters:
         if self.camera_matrix is not None:
-            src = cv.undistortPoints(np.expand_dims(
-                src, axis=1), self.camera_matrix, self.camera_dist, None, self.camera_matrix)
+            src = cv.undistortPoints(np.expand_dims(src, axis=1), self.camera_matrix, self.camera_dist, None, self.camera_matrix)
 
         # Homography relation between real world planar surface of stage and imaging plane (camera sensor)
         self._homography, _ = cv.findHomography(src, dst)

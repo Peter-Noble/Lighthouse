@@ -1,14 +1,4 @@
-from PySide6.QtWidgets import (
-    QLabel,
-    QVBoxLayout,
-    QWidget,
-    QDockWidget,
-    QListWidget,
-    QListWidgetItem,
-    QHBoxLayout,
-    QSpinBox,
-    QCheckBox,
-)
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget, QDockWidget, QListWidget, QListWidgetItem, QHBoxLayout, QSpinBox, QCheckBox, QSlider
 from PySide6.QtCore import Signal, Slot, QPoint
 from PySide6.QtGui import QVector3D
 
@@ -37,6 +27,18 @@ class SettingsDock(QDockWidget):
         self.tracks = [self.track0]
         self.settings_layout.addWidget(self.track0)
 
+        self.settings_layout.addWidget(QLabel("Homography height"))
+        self.homography_height = QSlider()
+        self.homography_height.setMinimum(-2)
+        self.homography_height.setMaximum(2)
+        self.settings_layout.addWidget(self.homography_height)
+
+        self.settings_layout.addWidget(QLabel("Height offset"))
+        self.height_offset = QSlider()
+        self.height_offset.setMinimum(-2)
+        self.height_offset.setMaximum(2)
+        self.settings_layout.addWidget(self.height_offset)
+
         # track_coord_layout = QHBoxLayout()
         # self.settings_layout.addLayout(track_coord_layout)
 
@@ -51,9 +53,7 @@ class SettingsDock(QDockWidget):
         # self.track_y.valueChanged.connect(self.updateTrack)
 
     @Slot(object)  # dict[str, HomographyPoint]
-    def updateHomographyPoints(
-        self, homography_points: dict[str, HomographyPoint]
-    ) -> None:
+    def updateHomographyPoints(self, homography_points: dict[str, HomographyPoint]) -> None:
         if self.list_widget.count() == 0:
             for name, hom in homography_points.items():
                 item = QListWidgetItem()
