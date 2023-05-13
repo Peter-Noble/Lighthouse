@@ -18,7 +18,7 @@ class HomographyPoint:
 
 
 class DataStore(QObject):
-    track_changed = Signal(int, QVector3D)  # id, screen space pos
+    track_changed = Signal(int, QVector3D, float)  # id, screen space pos
     homography_points_changed = Signal(object)  # The dictionary of homography points
 
     def __init__(self):
@@ -27,10 +27,10 @@ class DataStore(QObject):
         self.src_folder = Path(".")
 
         self._homography_points = {
-            "USL": HomographyPoint(QVector3D(3.9, -3, 0), QVector2D(221, 407)),
-            "USR": HomographyPoint(QVector3D(-3.9, -3, 0), QVector2D(76, 310)),
-            "DSL": HomographyPoint(QVector3D(3.9, -9, 0), QVector2D(168, 646)),
-            "DSR": HomographyPoint(QVector3D(-3.9, -9, 0), QVector2D(10, 606)),
+            "USL": HomographyPoint(QVector3D(3, 3, 1.65), QVector2D(917, 207)),
+            "USR": HomographyPoint(QVector3D(-3, 3, 1.65), QVector2D(489, 154)),
+            "DSL": HomographyPoint(QVector3D(3, -3, 1.65), QVector2D(820, 536)),
+            "DSR": HomographyPoint(QVector3D(-3, -3, 1.65), QVector2D(111, 344)),
         }
         self._tracks = [QPoint()]
         self._camera_location = np.zeros(3, dtype=np.float32)
@@ -64,12 +64,15 @@ class DataStore(QObject):
     def broadcast(self) -> None:
         self.homography_points_changed.emit(self._homography_points)
         for id in range(len(self._tracks)):
-            self.track_changed.emit(id, self._tracks[id])
+            self.track_changed.emit(id, self._tracks[id], self.height_offset)
 
     @Slot(float)
     def setHomographyHeight(self, height: float):
         self.homography_height = height
-        print(height)
+        for name, hom in self._homography_points.items():
+            hom.world_coord.setZ(height)
+        self.update_homography()
+        self.homography_points_changed.emit(self._homography_points)
 
     @Slot(float)
     def setHeightOffset(self, height: float):
@@ -98,12 +101,12 @@ class DataStore(QObject):
     @Slot(int, QPoint)
     def setTrack(self, id: int, point: QPoint) -> None:
         self._tracks[id] = point
-        self.track_changed.emit(id, self.apply_homography(point))
+        self.track_changed.emit(id, self.apply_homography(point), self.height_offset)
 
     @Slot(QPoint)
     def setTrack0(self, point: QPoint) -> None:
         self._tracks[0] = point
-        self.track_changed.emit(id, self.apply_homography(point))
+        self.track_changed.emit(id, self.apply_homography(point), self.height_offset)
 
     def getTrack(self, id: int) -> QPoint:
         return self._tracks[id]
@@ -114,6 +117,7 @@ class DataStore(QObject):
         for name, hom in self._homography_points.items():
             stage_corners_world_geometry.append(hom.world_coord.toTuple())
             stage_corners_pixel_locs.append(hom.screen_coord.toTuple())
+            print(hom.world_coord.toTuple())
 
         src = np.array(np.array(stage_corners_pixel_locs, dtype=np.float32))
         dst = np.array(np.array(stage_corners_world_geometry, dtype=np.float32))

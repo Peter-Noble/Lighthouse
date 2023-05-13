@@ -39,7 +39,7 @@ parser.add_argument(
     "--camera_to_use",
     type=int,
     help="specify camera to use",
-    default=0)
+    default=2)
 parser.add_argument(
     "-r",
     "--rescale",
@@ -52,20 +52,20 @@ parser.add_argument(
     type=int,
     help="specify number of internal chessboard squares \
             (corners) in x-direction",
-    default=6)
+    default=5)
 parser.add_argument(
     "-cby",
     "--chessboardy",
     type=int,
     help="specify number of internal chessboard squares \
             (corners) in y-direction",
-    default=8)
+    default=4)
 parser.add_argument(
     "-cbw",
     "--chessboardw",
     type=float,
     help="specify width/height of chessboard squares in mm",
-    default=18.0)
+    default=100)
 parser.add_argument(
     "-i",
     "--iterations",
@@ -92,11 +92,11 @@ try:
     cap = camera_stream.CameraVideoStream()
 
 except BaseException:
-    #cap = funcs.Camera(1,0,1280,720)
+    #cap = funcs.Camera(args.camera_to_use,0,1280,720)
     # if not then just use OpenCV default
 
     print("INFO: camera_stream class not found - camera input may be buffered")
-    cap = funcs.init_camera_capture(args.camera_to_use, -2, 1280, 720)
+    cap = funcs.init_camera_capture(args.camera_to_use, -2, 1920, 1080)
     #cap = cv2.VideoCapture(0)
 
 # define display window names
