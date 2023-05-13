@@ -29,6 +29,10 @@ class DataStore(QObject):
             "DSR": HomographyPoint(QVector3D(12, 8, 0), QVector2D(0, 0)),
         }
         self._tracks = [QPoint()]
+        self._camera_location = np.zeros(3, dtype=np.float32)
+        self._camera_rotation = np.zeros(3, dtype=np.float32)
+        self._camera_matrix = np.identity(3, dtype=np.float32)  # 3x3 camera matrix
+        self._camera_distortion = np.zeros(4, dtype=np.float32)  # 4 vector of distortion coefficients
 
         # Attempt to load camera calibration numpy saved files
         calibration_matrix_file_dir = './calibration_matrix.npy'
