@@ -99,7 +99,7 @@ class App(QMainWindow):
         self.psn_action = QAction(
             QIcon("src/images/icons/icons8-track-order-64.png"), "&Change Camera", self
         )
-        self.psn_action.triggered.connect(self.psnActionCallback)
+        #self.psn_action.triggered.connect(self.psnActionCallback)
         self.change_camera_action = QAction(
             QIcon("src/images/icons/icons8-documentary-64.png"), "&Change Camera", self
         )
@@ -134,6 +134,7 @@ class App(QMainWindow):
 
         self.psn_output = PSNOutput()
         self.psn_output.addTrack()
+        self.data.track_changed.connect(self.psn_output.setTrackWithPos)
 
     def exitActionCallback(self, s):
         self.close()

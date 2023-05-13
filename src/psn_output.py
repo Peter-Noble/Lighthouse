@@ -55,23 +55,26 @@ class PSNOutput(QObject):
             len(self.tracks), f"Tracker {len(self.tracks)}"
         )
 
+    @Slot(int, QVector3D)
+    def setTrackWithPos(self, id: int, pos: QVector3D):
+        self.setTrack(id=id, pos=pos)
+
     @Slot(int, QVector3D, QVector3D, QVector3D, QVector3D, float, QVector3D, float)
     def setTrack(
         self,
         id: int,
         pos: QVector3D,
-        speed: QVector3D | None,
-        accel: QVector3D | None,
-        ori: QVector3D | None,
-        status: float | None,
-        target_pos: QVector3D | None,
-        timestamp: float | None,
+        speed: QVector3D | None = None,
+        accel: QVector3D | None = None,
+        ori: QVector3D | None = None,
+        status: float | None = None,
+        target_pos: QVector3D | None = None,
+        timestamp: float | None = None,
     ) -> None:
         if no_psn:
             return
         tracker = self.tracks[id]
-        if pos is not None:
-            tracker.set_pos(psn.Float3(pos.x(), pos.y(), pos.z()))
+        tracker.set_pos(psn.Float3(pos.x(), pos.y(), pos.z()))
         if speed is not None:
             tracker.set_speed(psn.Float3(speed.x(), speed.y(), speed.z()))
         if accel is not None:
@@ -95,7 +98,7 @@ class PSNOutput(QObject):
         if len(self.tracks) == 0:
             return
 
-        print("Send PSN")
+        #print("Send PSN")
         # Encode
         time_stamp = get_elapsed_time_ms()
         packets = []
@@ -111,4 +114,5 @@ class PSNOutput(QObject):
                     packet, (PSN_DEFAULT_UDP_MULTICAST_ADDR, PSN_DEFAULT_UDP_PORT)
                 )
             except OSError as err:
+                print("PACKET SEND ERROR")
                 continue

@@ -23,10 +23,10 @@ class DataStore(QObject):
     def __init__(self):
         super().__init__()
         self._homography_points = {
-            "USL": HomographyPoint(QVector3D(0, 0, 0), QVector2D(0, 0)),
-            "USR": HomographyPoint(QVector3D(12, 0, 0), QVector2D(0, 0)),
-            "DSL": HomographyPoint(QVector3D(0, 8, 0), QVector2D(0, 0)),
-            "DSR": HomographyPoint(QVector3D(12, 8, 0), QVector2D(0, 0)),
+            "USL": HomographyPoint(QVector3D(0, 0, 0), QVector2D(221, 407)),
+            "USR": HomographyPoint(QVector3D(12, 0, 0), QVector2D(76, 310)),
+            "DSL": HomographyPoint(QVector3D(0, 8, 0), QVector2D(168, 646)),
+            "DSR": HomographyPoint(QVector3D(12, 8, 0), QVector2D(10, 606)),
         }
         self._tracks = [QPoint()]
         self._camera_location = np.zeros(3, dtype=np.float32)
