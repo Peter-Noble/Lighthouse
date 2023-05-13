@@ -88,24 +88,24 @@ class App(QMainWindow):
 
         # https://icons8.com/icon/set/lighthouse/cotton
         self.lighthouse_action = QAction(
-            QIcon("src/images/icons/icons8-lighthouse-64.png"), "&Lighthouse", self
+            QIcon(str((self.data.src_folder/"images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self
         )
         self.new_action = QAction(
-            QIcon("src/images/icons/icons8-one-page-64.png"), "&New", self
+            QIcon(str((self.data.src_folder/"images/icons/icons8-one-page-64.png").absolute())), "&New", self
         )
         self.open_action = QAction(
-            QIcon("src/images/icons/icons8-folder-64.png"), "&Open", self
+            QIcon(str((self.data.src_folder/"images/icons/icons8-folder-64.png").absolute())), "&Open", self
         )
         self.psn_action = QAction(
-            QIcon("src/images/icons/icons8-track-order-64.png"), "&Change Camera", self
+            QIcon(str((self.data.src_folder/"images/icons/icons8-track-order-64.png").absolute())), "&Change Camera", self
         )
         #self.psn_action.triggered.connect(self.psnActionCallback)
         self.change_camera_action = QAction(
-            QIcon("src/images/icons/icons8-documentary-64.png"), "&Change Camera", self
+            QIcon(str((self.data.src_folder/"images/icons/icons8-documentary-64.png").absolute())), "&Change Camera", self
         )
         self.change_camera_action.triggered.connect(self.cameraChangedActionCallback)
         self.exit_action = QAction(
-            QIcon("src/images/icons/icons8-cancel-64.png"), "&Exit", self
+            QIcon(str((self.data.src_folder/"images/icons/icons8-cancel-64.png").absolute())), "&Exit", self
         )
         self.exit_action.triggered.connect(self.exitActionCallback)
 

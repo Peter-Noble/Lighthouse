@@ -1,6 +1,7 @@
 from PySide6.QtCore import Signal, Slot, Qt, QPoint, QObject
 from PySide6.QtGui import QVector2D, QVector3D
 from PySide6.QtWidgets import QLabel
+from pathlib import Path
 import numpy as np
 import cv2 as cv
 
@@ -22,6 +23,9 @@ class DataStore(QObject):
 
     def __init__(self):
         super().__init__()
+
+        self.src_folder = Path(".")
+
         self._homography_points = {
             "USL": HomographyPoint(QVector3D(3.9, -3, 0), QVector2D(221, 407)),
             "USR": HomographyPoint(QVector3D(-3.9, -3, 0), QVector2D(76, 310)),
@@ -35,8 +39,8 @@ class DataStore(QObject):
         self._camera_distortion = np.zeros(4, dtype=np.float32)  # 4 vector of distortion coefficients
 
         # Attempt to load camera calibration numpy saved files
-        calibration_matrix_file_dir = './calibration_matrix.npy'
-        distortion_coefficients_file_dir = './distortion_coefficients.npy'
+        calibration_matrix_file_dir = str((self.src_folder / 'calibration_matrix.npy').absolute())
+        distortion_coefficients_file_dir = str((self.src_folder / 'distortion_coefficients.npy').absolute())
         try:
             self.camera_matrix = np.load(calibration_matrix_file_dir)
             self.camera_dist = np.load(distortion_coefficients_file_dir)
