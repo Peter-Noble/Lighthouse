@@ -69,10 +69,12 @@ class DataStore(QObject):
     @Slot(float)
     def setHomographyHeight(self, height: float):
         self.homography_height = height
+        print(height)
 
     @Slot(float)
     def setHeightOffset(self, height: float):
         self.height_offset = height
+        print(height)
 
     @Slot(str, HomographyPoint)
     def setHomographyPoint(self, name: str, point: HomographyPoint) -> None:

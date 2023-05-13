@@ -110,8 +110,8 @@ class App(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.settings_dock)
         # self.settingsDock.track_changed.connect(self.data.setTrack)
 
-        self.settings_dock.homography_height.valueChanged.connect(self.data.setHomographyHeight)
-        self.settings_dock.height_offset.valueChanged.connect(self.data.setHeightOffset)
+        self.settings_dock.homography_height.doubleValueChanged.connect(self.data.setHomographyHeight)
+        self.settings_dock.height_offset.doubleValueChanged.connect(self.data.setHeightOffset)
 
         self.data.track_changed.connect(self.settings_dock.updateTrack)
         self.data.homography_points_changed.connect(self.settings_dock.updateHomographyPoints)
