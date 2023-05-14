@@ -51,13 +51,11 @@ class PSNOutput(QObject):
     def addTrack(self) -> None:
         if no_psn:
             return
-        self.tracks[len(self.tracks)] = psn.Tracker(
-            len(self.tracks), f"Tracker {len(self.tracks)}"
-        )
+        self.tracks[len(self.tracks)] = psn.Tracker(len(self.tracks), f"Tracker {len(self.tracks)}")
 
     @Slot(int, QVector3D, float)
     def setTrackWithPos(self, id: int, pos: QVector3D, offset: float = 0):
-        self.setTrack(id=id, pos=QVector3D(pos.x(), pos.z()+offset, pos.y()))
+        self.setTrack(id=id, pos=QVector3D(pos.x(), pos.z() + offset, pos.y()))
 
     @Slot(int, QVector3D, QVector3D, QVector3D, QVector3D, float, QVector3D, float)
     def setTrack(
@@ -74,7 +72,7 @@ class PSNOutput(QObject):
         if no_psn:
             return
         tracker = self.tracks[id]
-        tracker.set_pos(psn.Float3(pos.x(), pos.y(), pos.z()))
+        tracker.set_pos(psn.Float3(pos.x() / 1000, pos.y() / 1000, pos.z() / 1000))
         if speed is not None:
             tracker.set_speed(psn.Float3(speed.x(), speed.y(), speed.z()))
         if accel is not None:
@@ -84,9 +82,7 @@ class PSNOutput(QObject):
         if status is not None:
             tracker.set_status(status)
         if target_pos is not None:
-            tracker.set_target_pos(
-                psn.Float3(target_pos.x(), target_pos.y(), target_pos.z())
-            )
+            tracker.set_target_pos(psn.Float3(target_pos.x(), target_pos.y(), target_pos.z()))
         if timestamp is not None:
             tracker.set_timestamp(timestamp)
         self.tracks[id] = tracker
@@ -98,7 +94,7 @@ class PSNOutput(QObject):
         if len(self.tracks) == 0:
             return
 
-        #print("Send PSN")
+        # print("Send PSN")
         # Encode
         time_stamp = get_elapsed_time_ms()
         packets = []
@@ -110,9 +106,7 @@ class PSNOutput(QObject):
 
         for packet in packets:
             try:
-                self.sock.sendto(
-                    packet, (PSN_DEFAULT_UDP_MULTICAST_ADDR, PSN_DEFAULT_UDP_PORT)
-                )
+                self.sock.sendto(packet, (PSN_DEFAULT_UDP_MULTICAST_ADDR, PSN_DEFAULT_UDP_PORT))
             except OSError as err:
                 print("PACKET SEND ERROR")
                 continue

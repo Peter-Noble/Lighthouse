@@ -123,5 +123,6 @@ class SettingsDock(QDockWidget):
 
     @Slot(int, QVector3D)
     def updateTrack(self, id: int, pos: QVector3D):
+        print("Updating track:", pos)
         label = self.tracks[id]
         label.setText(f"Track {id}: {round(pos.x(), 2)}, {round(pos.y(), 2)}, {round(pos.z(), 2)}")

@@ -207,7 +207,7 @@ class App(QMainWindow):
         brush.setColor(QColor(0, 0, 0, 0))
         painter.setBrush(brush)
 
-        painter.drawEllipse(self.data.getTrack(0), 50, 50)
+        painter.drawEllipse(self.data.getTrack2D(0), 50, 50)
 
         painter.end()
 
