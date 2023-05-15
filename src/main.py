@@ -1,21 +1,14 @@
+import os
 import sys
-
-import cv2
-import numpy as np
 
 # import ptvsd  # ptvsd.debug_this_thread()
 
-import os
-
 os.environ["QT_DRIVER"] = "PySide6"
-from araviq6 import VideoFrameProcessor, VideoFrameWorker, ScalableQLabel
-import qimage2ndarray
 
-from PySide6.QtCore import Signal, Slot, Qt, QPoint, QMutex
+from PySide6.QtCore import Slot, Qt
 from PySide6.QtGui import (
     QAction,
     QIcon,
-    QMouseEvent,
     QPixmap,
     QPainter,
     QColor,
@@ -30,22 +23,11 @@ from PySide6.QtMultimedia import (
     QVideoFrame,
     QVideoSink,
 )
-from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
     QApplication,
-    QComboBox,
-    QDialog,
-    QDialogButtonBox,
-    QLabel,
     QMainWindow,
     QVBoxLayout,
     QWidget,
-    QDockWidget,
-    QListWidget,
-    QListWidgetItem,
-    QPushButton,
-    QHBoxLayout,
-    QSpinBox,
 )
 
 from camera_select_dialog import CameraSelectDialog
@@ -87,14 +69,20 @@ class App(QMainWindow):
         self.camera.start()
 
         # https://icons8.com/icon/set/lighthouse/cotton
-        self.lighthouse_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self)
-        self.new_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-one-page-64.png").absolute())), "&New", self)
-        self.open_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-folder-64.png").absolute())), "&Open", self)
-        self.psn_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-track-order-64.png").absolute())), "&Change Camera", self)
+        self.lighthouse_action = QAction(QIcon(
+            str((self.data.src_folder / "images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self)
+        self.new_action = QAction(QIcon(
+            str((self.data.src_folder / "images/icons/icons8-one-page-64.png").absolute())), "&New", self)
+        self.open_action = QAction(QIcon(
+            str((self.data.src_folder / "images/icons/icons8-folder-64.png").absolute())), "&Open", self)
+        self.psn_action = QAction(QIcon(
+            str((self.data.src_folder / "images/icons/icons8-track-order-64.png").absolute())), "&Change Camera", self)
         # self.psn_action.triggered.connect(self.psnActionCallback)
-        self.change_camera_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-documentary-64.png").absolute())), "&Change Camera", self)
+        self.change_camera_action = QAction(QIcon(
+            str((self.data.src_folder / "images/icons/icons8-documentary-64.png").absolute())), "&Change Camera", self)
         self.change_camera_action.triggered.connect(self.cameraChangedActionCallback)
-        self.exit_action = QAction(QIcon(str((self.data.src_folder / "images/icons/icons8-cancel-64.png").absolute())), "&Exit", self)
+        self.exit_action = QAction(QIcon(
+            str((self.data.src_folder / "images/icons/icons8-cancel-64.png").absolute())), "&Exit", self)
         self.exit_action.triggered.connect(self.exitActionCallback)
 
         file_tool_bar = self.addToolBar("File")

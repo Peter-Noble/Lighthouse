@@ -56,10 +56,10 @@ class DataStore(QObject):
 
         self.update_homography()
 
-    def serialise():
+    def serialise(self):
         pass
 
-    def deserialise():
+    def deserialise(self):
         pass
 
     def broadcast(self) -> None:
@@ -159,7 +159,7 @@ class DataStore(QObject):
 
         self._camera_inv = transform_M_i
 
-    def apply_homography(self, screen_point=QPoint) -> QVector3D:
+    def apply_homography(self, screen_point=QPoint) -> QVector3D|None:
         if self._homography is not None and not np.isnan(self._homography).any():
             img_pt = screen_point.toTuple()
 

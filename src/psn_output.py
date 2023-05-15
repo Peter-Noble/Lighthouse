@@ -8,7 +8,7 @@ except:
 import socket
 import time
 
-from PySide6.QtCore import Signal, Slot, Qt, QPoint, QObject, QTimer
+from PySide6.QtCore import Slot, QObject, QTimer
 from PySide6.QtGui import QVector3D
 
 PSN_DEFAULT_UDP_PORT = 56565
@@ -59,15 +59,15 @@ class PSNOutput(QObject):
 
     @Slot(int, QVector3D, QVector3D, QVector3D, QVector3D, float, QVector3D, float)
     def setTrack(
-        self,
-        id: int,
-        pos: QVector3D,
-        speed: QVector3D | None = None,
-        accel: QVector3D | None = None,
-        ori: QVector3D | None = None,
-        status: float | None = None,
-        target_pos: QVector3D | None = None,
-        timestamp: float | None = None,
+            self,
+            id: int,
+            pos: QVector3D,
+            speed: QVector3D | None = None,
+            accel: QVector3D | None = None,
+            ori: QVector3D | None = None,
+            status: float | None = None,
+            target_pos: QVector3D | None = None,
+            timestamp: float | None = None,
     ) -> None:
         if no_psn:
             return
