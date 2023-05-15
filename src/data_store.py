@@ -46,7 +46,8 @@ class DataStore(QObject):
         # Attempt to load camera calibration numpy saved files
         calibration_matrix_file_dir = str((self.src_folder / "calibration_files" / "calibration_matrix.npy").absolute())
         distortion_coefficients_file_dir = str(
-            (self.src_folder / "calibration_files" / "distortion_coefficients.npy").absolute())
+            (self.src_folder / "calibration_files" / "distortion_coefficients.npy").absolute()
+        )
         try:
             self._camera_matrix = np.load(calibration_matrix_file_dir)
             self._camera_dist = np.load(distortion_coefficients_file_dir)
@@ -141,15 +142,21 @@ class DataStore(QObject):
 
         # If calibrated camera, account for distortion parameters:
         if self._camera_matrix is not None:
-            src = cv.undistortPoints(np.expand_dims(src, axis=1), self._camera_matrix, self._camera_dist, None,
-                                     self._camera_matrix)
+            src = cv.undistortPoints(
+                np.expand_dims(src, axis=1), self._camera_matrix, self._camera_dist, None, self._camera_matrix
+            )
 
         # Homography relation between real world planar surface of stage and imaging plane (camera sensor)
         self._homography, _ = cv.findHomography(src, dst)
         print("\nHomography from img plane to stage system: \n", self._homography)
 
-        success, r_vec, t_vec = cv.solvePnP(objectPoints=dst, imagePoints=src, cameraMatrix=self._camera_matrix,
-                                            distCoeffs=self._camera_dist, flags=cv.SOLVEPNP_IPPE)
+        success, r_vec, t_vec = cv.solvePnP(
+            objectPoints=dst,
+            imagePoints=src,
+            cameraMatrix=self._camera_matrix,
+            distCoeffs=self._camera_dist,
+            flags=cv.SOLVEPNP_IPPE,
+        )
 
         self.r_vec = r_vec
         self.t_vec = t_vec
@@ -173,20 +180,31 @@ class DataStore(QObject):
 
             # If calibrated camera, account for distortion parameters:
             if self._camera_matrix is not None:
-                img_pt = cv.undistortPoints(np.array(img_pt, dtype=np.float32), self._camera_matrix,
-                                            self._camera_dist, None, self._camera_matrix)[0][0]
+                img_pt = cv.undistortPoints(
+                    np.array(img_pt, dtype=np.float32),
+                    self._camera_matrix,
+                    self._camera_dist,
+                    None,
+                    self._camera_matrix,
+                )[0][0]
 
             cam_pos = self._camera_inv[:3, 3]
 
-            point_on_camera_plane = np.array([
-                (img_pt[0] - self._camera_matrix[0, 2]) / self._camera_matrix[0, 0],
-                (img_pt[1] - self._camera_matrix[1, 2]) / self._camera_matrix[1, 1], 1, 1
-            ])
+            point_on_camera_plane = np.array(
+                [
+                    (img_pt[0] - self._camera_matrix[0, 2]) / self._camera_matrix[0, 0],
+                    (img_pt[1] - self._camera_matrix[1, 2]) / self._camera_matrix[1, 1],
+                    1,
+                    1,
+                ]
+            )
             point_in_world_plane = self._camera_inv.dot(point_on_camera_plane)
             point_in_world_plane = point_in_world_plane[:3] / point_in_world_plane[3]
 
             ray = point_in_world_plane - cam_pos
             result = planeRayIntersection(cam_pos, ray, self.height_offset)
+            if result is None:
+                return None
             print(f"Pt {screen_point.toTuple()} -> Real World Coords {result}")
             return QVector3D(result[0], result[1], result[2])
         else:
