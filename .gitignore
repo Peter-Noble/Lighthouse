@@ -6,3 +6,4 @@ psn-py/*
 *.pyc
 *.npy
 *.so
+/src/calibration_files/
