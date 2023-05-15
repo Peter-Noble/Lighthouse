@@ -55,6 +55,7 @@ class SettingsDock(QDockWidget):
         self.settings_layout_widget.setLayout(self.settings_layout)
         self.setWidget(self.settings_layout_widget)
 
+        self.settings_layout.addWidget(QLabel("Stage Geometry Points"))
         self.list_widget = QListWidget()
         self.settings_layout.addWidget(self.list_widget)
 
@@ -135,6 +136,9 @@ class SettingsDock(QDockWidget):
                     if label is not None:
                         label.setText(f"{name} {hom}")
                         break
+                else:
+                    self.addHomographyPoint(name, hom)
+
 
 
     @Slot(int, QVector3D)
@@ -146,7 +150,7 @@ class SettingsDock(QDockWidget):
     def homographyListClick(self, item: QListWidgetItem):
         if str(item.data(-1)) == "__add_new__":
             dlg = AddNewPointDialog()
-            ret = dlg.exec_()
+            ret = dlg.exec()
             if ret:
                 new_point = dlg.current_unit_multiplier * QVector3D(
                     float(dlg.x_input.text()), float(dlg.y_input.text()), float(dlg.z_input.text())

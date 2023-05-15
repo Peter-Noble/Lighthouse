@@ -1,3 +1,5 @@
+import pickle
+
 from PySide6.QtCore import Signal, Slot, Qt, QPoint, QObject
 from PySide6.QtGui import QVector2D, QVector3D
 from PySide6.QtWidgets import QLabel
@@ -57,10 +59,16 @@ class DataStore(QObject):
         self.update_homography()
 
     def serialise(self):
-        pass
+        return [self._camera_dist, self._camera_matrix, self._camera_inv,
+                self._homography_points, self._homography, self.t_vec, self.r_vec]
 
-    def deserialise(self):
-        pass
+    def deserialise(self, fileName):
+        file = open(fileName, 'rb')
+        (self._camera_dist, self._camera_matrix, self._camera_inv,
+         self._homography_points, self._homography, self.t_vec, self.r_vec) = pickle.load(file)
+        file.close()
+        self.broadcast()
+
 
     def broadcast(self) -> None:
         self.homography_points_changed.emit(self._homography_points)
@@ -159,7 +167,7 @@ class DataStore(QObject):
 
         self._camera_inv = transform_M_i
 
-    def apply_homography(self, screen_point=QPoint) -> QVector3D|None:
+    def apply_homography(self, screen_point=QPoint) -> QVector3D | None:
         if self._homography is not None and not np.isnan(self._homography).any():
             img_pt = screen_point.toTuple()
 

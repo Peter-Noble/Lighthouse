@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 
 # import ptvsd  # ptvsd.debug_this_thread()
@@ -28,6 +29,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QVBoxLayout,
     QWidget,
+    QFileDialog,
 )
 
 from camera_select_dialog import CameraSelectDialog
@@ -47,6 +49,8 @@ class App(QMainWindow):
 
         self.data = DataStore()
         self.data.setParent(self)
+
+        self._previous_save_filename = str((self.data.src_folder / "showfile.lho").absolute())
 
         vbox = QVBoxLayout()
 
@@ -73,10 +77,16 @@ class App(QMainWindow):
             str((self.data.src_folder / "images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self)
         self.new_action = QAction(QIcon(
             str((self.data.src_folder / "images/icons/icons8-one-page-64.png").absolute())), "&New", self)
+        #self.new_action.triggered.connect(self.newActionCallback)
+        self.save_action = QAction(QIcon(
+            str((self.data.src_folder / "images/icons/icons8-save-64.png").absolute())), "&Save", self)
+        self.save_action.triggered.connect(self.saveActionCallback)
+        self.save_action.setShortcut("Ctrl+S")
         self.open_action = QAction(QIcon(
             str((self.data.src_folder / "images/icons/icons8-folder-64.png").absolute())), "&Open", self)
+        self.open_action.triggered.connect(self.openActionCallback)
         self.psn_action = QAction(QIcon(
-            str((self.data.src_folder / "images/icons/icons8-track-order-64.png").absolute())), "&Change Camera", self)
+            str((self.data.src_folder / "images/icons/icons8-track-order-64.png").absolute())), "&PSN Settings", self)
         # self.psn_action.triggered.connect(self.psnActionCallback)
         self.change_camera_action = QAction(QIcon(
             str((self.data.src_folder / "images/icons/icons8-documentary-64.png").absolute())), "&Change Camera", self)
@@ -88,6 +98,7 @@ class App(QMainWindow):
         file_tool_bar = self.addToolBar("File")
         file_tool_bar.addAction(self.lighthouse_action)
         file_tool_bar.addAction(self.new_action)
+        file_tool_bar.addAction(self.save_action)
         file_tool_bar.addAction(self.open_action)
         file_tool_bar.addAction(self.psn_action)
         file_tool_bar.addAction(self.change_camera_action)
@@ -116,6 +127,20 @@ class App(QMainWindow):
 
     def exitActionCallback(self, s):
         self.close()
+
+    def saveActionCallback(self):
+        fileName = QFileDialog.getSaveFileName(self, 'Save File',
+                                               self._previous_save_filename, "Lighthouse Save Files (*.lho)")[0]
+        print(fileName)
+        file = open(fileName, 'wb')
+        pickle.dump(self.data.serialise(), file)
+        file.close()
+
+    def openActionCallback(self):
+        fileName = QFileDialog.getOpenFileName(self, 'Open File')[0]
+        print(fileName)
+        self.data.deserialise(fileName)
+        self._previous_save_filename = fileName
 
     def psnActionCallback(self, s):
         # Euclidean Coordinates of the tracker current position.
