@@ -110,7 +110,6 @@ class App(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.settings_dock)
         # self.settingsDock.track_changed.connect(self.data.setTrack)
 
-        self.settings_dock.homography_height.doubleValueChanged.connect(self.data.setHomographyHeight)
         self.settings_dock.height_offset.doubleValueChanged.connect(self.data.setHeightOffset)
 
         self.data.track_changed.connect(self.settings_dock.updateTrack)
@@ -118,6 +117,8 @@ class App(QMainWindow):
 
         self.video_widget.click_position.connect(self.data.setHomographyScreenPoint)
         self.video_widget.click_position.connect(self.data.setTrack0)
+
+        self.settings_dock.addNewHomographyPoint.connect(self.data.addNewHomographyPoint)
 
         self.data.broadcast()
 

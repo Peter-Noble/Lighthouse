@@ -39,12 +39,12 @@ class DataStore(QObject):
         self._camera_matrix = np.identity(3, dtype=np.float32)  # 3x3 camera matrix
         self._camera_dist = np.zeros(4, dtype=np.float32)  # 4 vector of distortion coefficients
 
-        self.homography_height = 0.0
         self.height_offset = 0.0
 
         # Attempt to load camera calibration numpy saved files
-        calibration_matrix_file_dir = str((self.src_folder / "calibration_matrix.npy").absolute())
-        distortion_coefficients_file_dir = str((self.src_folder / "distortion_coefficients.npy").absolute())
+        calibration_matrix_file_dir = str((self.src_folder / "calibration_files" / "calibration_matrix.npy").absolute())
+        distortion_coefficients_file_dir = str(
+            (self.src_folder / "calibration_files" / "distortion_coefficients.npy").absolute())
         try:
             self._camera_matrix = np.load(calibration_matrix_file_dir)
             self._camera_dist = np.load(distortion_coefficients_file_dir)
@@ -68,17 +68,13 @@ class DataStore(QObject):
             self.track_changed.emit(id, self._tracks[id])
 
     @Slot(float)
-    def setHomographyHeight(self, height: float):
-        self.homography_height = height
-        for name, hom in self._homography_points.items():
-            hom.world_coord.setZ(height)
-        self.update_homography()
-        self.homography_points_changed.emit(self._homography_points)
-
-    @Slot(float)
     def setHeightOffset(self, height: float):
         self.height_offset = height
         print(height)
+
+    @Slot(str, QVector3D)
+    def addNewHomographyPoint(self, name: str, homography: HomographyPoint):
+        self._homography_points[name] = homography
 
     @Slot(str, HomographyPoint)
     def setHomographyPoint(self, name: str, point: HomographyPoint) -> None:
@@ -95,19 +91,26 @@ class DataStore(QObject):
         item_widget = settings_dock.list_widget.itemWidget(settings_dock.list_widget.currentItem())
         name = item_widget.findChildren(QLabel)[0].objectName()
 
-        self._homography_points[name].screen_coord = point
-        self.update_homography()
-        self.homography_points_changed.emit(self._homography_points)
+        if name != "__add_new__":
+            self._homography_points[name].screen_coord = point
+            self.update_homography()
+            self.homography_points_changed.emit(self._homography_points)
 
     @Slot(int, QPoint)
     def setTrack(self, id: int, point: QPoint) -> None:
-        self._tracks[id] = self.apply_homography(point)
-        self.track_changed.emit(id, self._tracks[id])
+        if self.parent().settings_dock.edit_homography_points.checkState() is Qt.CheckState.Unchecked:
+            new_target = self.apply_homography(point)
+            if new_target is not None:
+                self._tracks[id] = new_target
+                self.track_changed.emit(id, self._tracks[id])
 
     @Slot(QPoint)
     def setTrack0(self, point: QPoint) -> None:
-        self._tracks[0] = self.apply_homography(point)
-        self.track_changed.emit(0, self._tracks[0])
+        if self.parent().settings_dock.edit_homography_points.checkState() is Qt.CheckState.Unchecked:
+            new_target = self.apply_homography(point)
+            if new_target is not None:
+                self._tracks[0] = new_target
+                self.track_changed.emit(0, self._tracks[0])
 
     def getTrack(self, id: int) -> QVector3D:
         return self._tracks[id]
@@ -123,20 +126,22 @@ class DataStore(QObject):
         for name, hom in self._homography_points.items():
             stage_corners_world_geometry.append(hom.world_coord.toTuple())
             stage_corners_pixel_locs.append(hom.screen_coord.toTuple())
-            print(hom.world_coord.toTuple())
+            # print(hom.world_coord.toTuple())
 
         src = np.array(np.array(stage_corners_pixel_locs, dtype=np.float32))
         dst = np.array(np.array(stage_corners_world_geometry, dtype=np.float32))
 
         # If calibrated camera, account for distortion parameters:
         if self._camera_matrix is not None:
-            src = cv.undistortPoints(np.expand_dims(src, axis=1), self._camera_matrix, self._camera_dist, None, self._camera_matrix)
+            src = cv.undistortPoints(np.expand_dims(src, axis=1), self._camera_matrix, self._camera_dist, None,
+                                     self._camera_matrix)
 
         # Homography relation between real world planar surface of stage and imaging plane (camera sensor)
         self._homography, _ = cv.findHomography(src, dst)
         print("\nHomography from img plane to stage system: \n", self._homography)
 
-        success, r_vec, t_vec = cv.solvePnP(objectPoints=dst, imagePoints=src, cameraMatrix=self._camera_matrix, distCoeffs=self._camera_dist, flags=cv.SOLVEPNP_IPPE)
+        success, r_vec, t_vec = cv.solvePnP(objectPoints=dst, imagePoints=src, cameraMatrix=self._camera_matrix,
+                                            distCoeffs=self._camera_dist, flags=cv.SOLVEPNP_IPPE)
 
         self.r_vec = r_vec
         self.t_vec = t_vec
@@ -145,6 +150,7 @@ class DataStore(QObject):
 
         cam_pos = -np.matrix(rot_m).T * np.matrix(t_vec)
         cam_pos = np.array(cam_pos.T.tolist()[0])
+        print("\nCamera position within stage system: \n", cam_pos)
 
         transform_M_i = np.empty((4, 4))
         transform_M_i[:3, :3] = rot_m.T
@@ -157,23 +163,23 @@ class DataStore(QObject):
         if self._homography is not None and not np.isnan(self._homography).any():
             img_pt = screen_point.toTuple()
 
+            # If calibrated camera, account for distortion parameters:
+            if self._camera_matrix is not None:
+                img_pt = cv.undistortPoints(np.array(img_pt, dtype=np.float32), self._camera_matrix,
+                                            self._camera_dist, None, self._camera_matrix)[0][0]
+
             cam_pos = self._camera_inv[:3, 3]
 
-            point_on_camera_plane = np.array([(img_pt[0] - self._camera_matrix[0, 2]) / self._camera_matrix[0, 0], (img_pt[1] - self._camera_matrix[1, 2]) / self._camera_matrix[1, 1], 1, 1])
+            point_on_camera_plane = np.array([
+                (img_pt[0] - self._camera_matrix[0, 2]) / self._camera_matrix[0, 0],
+                (img_pt[1] - self._camera_matrix[1, 2]) / self._camera_matrix[1, 1], 1, 1
+            ])
             point_in_world_plane = self._camera_inv.dot(point_on_camera_plane)
             point_in_world_plane = point_in_world_plane[:3] / point_in_world_plane[3]
 
             ray = point_in_world_plane - cam_pos
             result = planeRayIntersection(cam_pos, ray, self.height_offset)
+            print(f"Pt {screen_point.toTuple()} -> Real World Coords {result}")
             return QVector3D(result[0], result[1], result[2])
-
-            # If calibrated camera, account for distortion parameters:
-            if self.camera_matrix is not None:
-                img_pt = cv.undistortPoints(np.array(img_pt, dtype=np.float32), self.camera_matrix, self._camera_dist, None, self.camera_matrix)[0][0]
-
-            t_x, t_y, t_z = np.dot(self._homography, [[[img_pt[0]], [img_pt[1]], [1]]])
-            target_world_geometry = QVector3D(float(t_x) / float(t_z), float(t_y) / float(t_z), 0)
-            print(f"Pt {screen_point.toTuple()} -> Real World Coords {target_world_geometry.toTuple()}")
-            return target_world_geometry
         else:
             return None

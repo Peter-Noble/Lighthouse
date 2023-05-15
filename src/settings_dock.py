@@ -1,6 +1,8 @@
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget, QDockWidget, QListWidget, QListWidgetItem, QHBoxLayout, QSpinBox, QCheckBox, QSlider
+import numpy as np
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget, QDockWidget, QListWidget, QListWidgetItem, QHBoxLayout, \
+    QSpinBox, QCheckBox, QSlider, QPushButton, QDialog, QDialogButtonBox, QLineEdit, QComboBox
 from PySide6.QtCore import Signal, Slot, QPoint, Qt
-from PySide6.QtGui import QVector3D
+from PySide6.QtGui import QVector3D, QVector2D
 
 from data_store import HomographyPoint
 
@@ -11,7 +13,7 @@ class DoubleSlider(QSlider):
 
     def __init__(self, decimals=2, *args, **kargs):
         super(DoubleSlider, self).__init__(*args, **kargs)
-        self._multi = 10**decimals
+        self._multi = 10 ** decimals
 
         self.valueChanged.connect(self.emitDoubleValueChanged)
 
@@ -38,7 +40,66 @@ class DoubleSlider(QSlider):
         super(DoubleSlider, self).setValue(int(value * self._multi))
 
 
+class AddNewPointDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Add New Stage Point")
+
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+
+        buttonBox = QDialogButtonBox(QBtn)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        verticalLayout = QVBoxLayout()
+        verticalLayout.setSpacing(12)
+
+        # Label:
+        horizontalNameLayout = QHBoxLayout()
+        name_label = QLabel("Point Label:")
+        self.pt_label_input = QLineEdit("Upstage Left")
+        horizontalNameLayout.addWidget(name_label)
+        horizontalNameLayout.addWidget(self.pt_label_input)
+
+        # Coordinates:
+        message = QLabel("Please enter the measurements to the new stage point from your chosen reference point")
+        horizontalLayout = QHBoxLayout()
+        x_label = QLabel("Width:")
+        self.x_input = QLineEdit("0")
+        y_label = QLabel("Depth:")
+        self.y_input = QLineEdit("0")
+        z_label = QLabel("Height:")
+        self.z_input = QLineEdit("0")
+        for widget in [x_label, self.x_input, y_label, self.y_input, z_label, self.z_input]:
+            horizontalLayout.addWidget(widget)
+
+        # Unit selection:
+        self.current_unit_multiplier = 1
+        self.unitSelect = QComboBox()
+        self.unitSelect.addItems(["mm", "cm", "m", "in", "ft", "yd"])
+        self.unitSelect.currentIndexChanged.connect(self.unit_changed)
+        unitLabel = QLabel("Measurement Unit:")
+        horizontalUnitLayout = QHBoxLayout()
+        horizontalUnitLayout.addWidget(unitLabel)
+        horizontalUnitLayout.addWidget(self.unitSelect)
+
+        # Add all to dialog layout:
+        verticalLayout.addLayout(horizontalNameLayout)
+        verticalLayout.addWidget(message)
+        verticalLayout.addLayout(horizontalLayout)
+        verticalLayout.addLayout(horizontalUnitLayout)
+        verticalLayout.addWidget(buttonBox)
+
+        self.setLayout(verticalLayout)
+
+    def unit_changed(self, unit_id):
+        multipliers = [1, 10, 1000, 25.4, 304.8, 914.4]
+        self.current_unit_multiplier = multipliers[unit_id]
+
+
 class SettingsDock(QDockWidget):
+    addNewHomographyPoint = Signal(str, HomographyPoint)
+
     def __init__(self):
         super().__init__()
 
@@ -54,18 +115,12 @@ class SettingsDock(QDockWidget):
         self.settings_layout.addWidget(self.list_widget)
 
         self.edit_homography_points = QCheckBox("Edit homography points")
+        self.edit_homography_points.setChecked(True)
         self.settings_layout.addWidget(self.edit_homography_points)
 
         self.track0 = QLabel("Track 0: 0.0, 0.0")
         self.tracks = [self.track0]
         self.settings_layout.addWidget(self.track0)
-
-        self.settings_layout.addWidget(QLabel("Homography height"))
-        self.homography_height = DoubleSlider(orientation=Qt.Orientation.Horizontal)
-        self.homography_height.setMinimum(-2)
-        self.homography_height.setMaximum(2)
-        self.homography_height.setTickInterval(0.01)
-        self.settings_layout.addWidget(self.homography_height)
 
         self.settings_layout.addWidget(QLabel("Height offset"))
         self.height_offset = DoubleSlider(orientation=Qt.Orientation.Horizontal)
@@ -87,28 +142,44 @@ class SettingsDock(QDockWidget):
         # self.track_x.valueChanged.connect(self.updateTrack)
         # self.track_y.valueChanged.connect(self.updateTrack)
 
+    @Slot(str, HomographyPoint)
+    def addHomographyPoint(self, name, hom):
+        item = QListWidgetItem()
+        item_widget = QWidget()
+        item_layout = QHBoxLayout()
+        item_widget.setLayout(item_layout)
+
+        line_text = QLabel(f"{name} {hom}", objectName=name)
+        item_layout.addWidget(line_text)
+
+        # point_spin_x = QSpinBox()
+        # point_spin_x.setMaximum(10000)
+        # item_layout.addWidget(point_spin_x)
+        # point_spin_y = QSpinBox()
+        # point_spin_y.setMaximum(10000)
+        # item_layout.addWidget(point_spin_y)
+
+        item.setSizeHint(item_widget.sizeHint())
+        self.list_widget.addItem(item)
+        self.list_widget.setItemWidget(item, item_widget)
+
     @Slot(object)  # dict[str, HomographyPoint]
     def updateHomographyPoints(self, homography_points: dict[str, HomographyPoint]) -> None:
         if self.list_widget.count() == 0:
             for name, hom in homography_points.items():
-                item = QListWidgetItem()
-                item_widget = QWidget()
-                item_layout = QHBoxLayout()
-                item_widget.setLayout(item_layout)
+                self.addHomographyPoint(name, hom)
 
-                line_text = QLabel(f"{name} {hom}", objectName=name)
-                item_layout.addWidget(line_text)
-
-                # point_spin_x = QSpinBox()
-                # point_spin_x.setMaximum(10000)
-                # item_layout.addWidget(point_spin_x)
-                # point_spin_y = QSpinBox()
-                # point_spin_y.setMaximum(10000)
-                # item_layout.addWidget(point_spin_y)
-
-                item.setSizeHint(item_widget.sizeHint())
-                self.list_widget.addItem(item)
-                self.list_widget.setItemWidget(item, item_widget)
+            add_new = QListWidgetItem()
+            add_new.setData(-1, "__add_new__")
+            add_new_widget = QWidget()
+            add_new_layout = QHBoxLayout()
+            add_new_widget.setLayout(add_new_layout)
+            line_text = QLabel("Add New", objectName="__add_new__")
+            add_new_layout.addWidget(line_text)
+            add_new.setSizeHint(add_new_widget.sizeHint())
+            self.list_widget.addItem(add_new)
+            self.list_widget.setItemWidget(add_new, add_new_widget)
+            self.list_widget.itemClicked.connect(self.homographyListClick)
 
             self.list_widget.setCurrentRow(0)
         else:
@@ -126,3 +197,16 @@ class SettingsDock(QDockWidget):
         print("Updating track:", pos)
         label = self.tracks[id]
         label.setText(f"Track {id}: {round(pos.x(), 2)}, {round(pos.y(), 2)}, {round(pos.z(), 2)}")
+
+    def homographyListClick(self, item: QListWidgetItem):
+        if str(item.data(-1)) == "__add_new__":
+            dlg = AddNewPointDialog()
+            ret = dlg.exec_()
+            if ret:
+                new_point = dlg.current_unit_multiplier * QVector3D(
+                    float(dlg.x_input.text()), float(dlg.y_input.text()), float(dlg.z_input.text())
+                )
+                new_homogrphy_pt = HomographyPoint(new_point, QVector2D(0, 0))
+                self.addNewHomographyPoint.emit(dlg.pt_label_input.text(), new_homogrphy_pt)
+                self.addHomographyPoint(dlg.pt_label_input.text(), new_homogrphy_pt)
+
