@@ -2,8 +2,9 @@
 .venv/*
 .idea/*
 psn-py/*
+src/calibration_files/*
 *.DS_Store
 *.pyc
 *.npy
 *.so
-/src/calibration_files/
+*.lho
