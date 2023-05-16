@@ -180,6 +180,7 @@ class SettingsDock(QDockWidget):
             dlg = AddNewPointDialog()
             ret = dlg.exec()
             while ret and dlg.pt_label_input.text() in existing_names:
+                dlg.warning_label.setHidden(False)
                 ret = dlg.exec()
             if ret:
                 new_point = dlg.current_unit_multiplier * QVector3D(
@@ -196,6 +197,7 @@ class SettingsDock(QDockWidget):
         ret = dlg.exec()
         # Ensure unique name:
         while dlg.pt_label_input.text() != name and (ret and dlg.pt_label_input.text() in existing_names):
+            dlg.warning_label.setHidden(False)
             ret = dlg.exec()
         if ret:
             # Edit Point

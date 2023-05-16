@@ -29,6 +29,9 @@ class AddNewPointDialog(QDialog):
         self.pt_label_input = QLineEdit("Upstage Left")
         horizontalNameLayout.addWidget(name_label)
         horizontalNameLayout.addWidget(self.pt_label_input)
+        self.warning_label = QLabel("Please choose a label that has not yet been used.")
+        self.warning_label.setStyleSheet("color: red")
+        self.warning_label.setHidden(True)
 
         # Coordinates:
         message = QLabel("Please enter the measurements to the new stage point from your chosen reference point")
@@ -54,6 +57,7 @@ class AddNewPointDialog(QDialog):
 
         # Add all to dialog layout:
         verticalLayout.addLayout(horizontalNameLayout)
+        verticalLayout.addWidget(self.warning_label)
         verticalLayout.addWidget(message)
         verticalLayout.addLayout(horizontalLayout)
         verticalLayout.addLayout(horizontalUnitLayout)
