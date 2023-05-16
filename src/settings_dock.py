@@ -1,6 +1,15 @@
 import numpy as np
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget, QDockWidget, QListWidget, QListWidgetItem, QHBoxLayout, \
-    QCheckBox, QSlider
+from PySide6.QtWidgets import (
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+    QDockWidget,
+    QListWidget,
+    QListWidgetItem,
+    QHBoxLayout,
+    QCheckBox,
+    QSlider,
+)
 from PySide6.QtCore import Signal, Slot, Qt
 from PySide6.QtGui import QVector3D, QVector2D
 
@@ -14,7 +23,7 @@ class DoubleSlider(QSlider):
 
     def __init__(self, decimals=2, *args, **kargs):
         super(DoubleSlider, self).__init__(*args, **kargs)
-        self._multi = 10 ** decimals
+        self._multi = 10**decimals
 
         self.valueChanged.connect(self.emitDoubleValueChanged)
 
@@ -60,7 +69,7 @@ class SettingsDock(QDockWidget):
         self.settings_layout.addWidget(self.list_widget)
 
         self.edit_homography_points = QCheckBox("Edit homography points")
-        self.edit_homography_points.setChecked(True)
+        self.edit_homography_points.setChecked(False)
         self.settings_layout.addWidget(self.edit_homography_points)
 
         self.track0 = QLabel("Track 0: 0.0, 0.0")
@@ -73,6 +82,10 @@ class SettingsDock(QDockWidget):
         self.height_offset.setMaximum(2)
         self.height_offset.setTickInterval(0.01)
         self.settings_layout.addWidget(self.height_offset)
+
+        self.use_space_mouse = QCheckBox("Use SpaceMouse")
+        self.use_space_mouse.setChecked(True)
+        self.settings_layout.addWidget(self.use_space_mouse)
 
         # track_coord_layout = QHBoxLayout()
         # self.settings_layout.addLayout(track_coord_layout)
@@ -140,10 +153,9 @@ class SettingsDock(QDockWidget):
                     self.addHomographyPoint(name, hom)
 
 
-
     @Slot(int, QVector3D)
     def updateTrack(self, id: int, pos: QVector3D):
-        print("Updating track:", pos)
+        # print("Updating track:", pos)
         label = self.tracks[id]
         label.setText(f"Track {id}: {round(pos.x(), 2)}, {round(pos.y(), 2)}, {round(pos.z(), 2)}")
 
@@ -158,4 +170,3 @@ class SettingsDock(QDockWidget):
                 new_homogrphy_pt = HomographyPoint(new_point, QVector2D(0, 0))
                 self.addNewHomographyPoint.emit(dlg.pt_label_input.text(), new_homogrphy_pt)
                 self.addHomographyPoint(dlg.pt_label_input.text(), new_homogrphy_pt)
-

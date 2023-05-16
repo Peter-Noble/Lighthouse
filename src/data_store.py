@@ -205,7 +205,7 @@ class DataStore(QObject):
             result = planeRayIntersection(cam_pos, ray, self.height_offset)
             if result is None:
                 return None
-            print(f"Pt {screen_point.toTuple()} -> Real World Coords {result}")
+            # print(f"Pt {screen_point.toTuple()} -> Real World Coords {result}")
             return QVector3D(result[0], result[1], result[2])
         else:
             return None

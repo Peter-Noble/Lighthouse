@@ -37,6 +37,7 @@ from settings_dock import SettingsDock
 from video_display_widget import VideoDisplayWidget
 from data_store import DataStore
 from psn_output import PSNOutput
+from space_mouse import SpaceMouse
 
 
 class App(QMainWindow):
@@ -73,26 +74,37 @@ class App(QMainWindow):
         self.camera.start()
 
         # https://icons8.com/icon/set/lighthouse/cotton
-        self.lighthouse_action = QAction(QIcon(
-            str((self.data.src_folder / "images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self)
-        self.new_action = QAction(QIcon(
-            str((self.data.src_folder / "images/icons/icons8-one-page-64.png").absolute())), "&New", self)
-        #self.new_action.triggered.connect(self.newActionCallback)
-        self.save_action = QAction(QIcon(
-            str((self.data.src_folder / "images/icons/icons8-save-64.png").absolute())), "&Save", self)
+        self.lighthouse_action = QAction(
+            QIcon(str((self.data.src_folder / "images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self
+        )
+        self.new_action = QAction(
+            QIcon(str((self.data.src_folder / "images/icons/icons8-one-page-64.png").absolute())), "&New", self
+        )
+        # self.new_action.triggered.connect(self.newActionCallback)
+        self.save_action = QAction(
+            QIcon(str((self.data.src_folder / "images/icons/icons8-save-64.png").absolute())), "&Save", self
+        )
         self.save_action.triggered.connect(self.saveActionCallback)
         self.save_action.setShortcut("Ctrl+S")
-        self.open_action = QAction(QIcon(
-            str((self.data.src_folder / "images/icons/icons8-folder-64.png").absolute())), "&Open", self)
+        self.open_action = QAction(
+            QIcon(str((self.data.src_folder / "images/icons/icons8-folder-64.png").absolute())), "&Open", self
+        )
         self.open_action.triggered.connect(self.openActionCallback)
-        self.psn_action = QAction(QIcon(
-            str((self.data.src_folder / "images/icons/icons8-track-order-64.png").absolute())), "&PSN Settings", self)
+        self.psn_action = QAction(
+            QIcon(str((self.data.src_folder / "images/icons/icons8-track-order-64.png").absolute())),
+            "&PSN Settings",
+            self,
+        )
         # self.psn_action.triggered.connect(self.psnActionCallback)
-        self.change_camera_action = QAction(QIcon(
-            str((self.data.src_folder / "images/icons/icons8-documentary-64.png").absolute())), "&Change Camera", self)
+        self.change_camera_action = QAction(
+            QIcon(str((self.data.src_folder / "images/icons/icons8-documentary-64.png").absolute())),
+            "&Change Camera",
+            self,
+        )
         self.change_camera_action.triggered.connect(self.cameraChangedActionCallback)
-        self.exit_action = QAction(QIcon(
-            str((self.data.src_folder / "images/icons/icons8-cancel-64.png").absolute())), "&Exit", self)
+        self.exit_action = QAction(
+            QIcon(str((self.data.src_folder / "images/icons/icons8-cancel-64.png").absolute())), "&Exit", self
+        )
         self.exit_action.triggered.connect(self.exitActionCallback)
 
         file_tool_bar = self.addToolBar("File")
@@ -125,19 +137,23 @@ class App(QMainWindow):
         self.psn_output.addTrack()
         self.data.track_changed.connect(self.psn_output.setTrackWithPos)
 
+        self.space_mouse = SpaceMouse(parent=self)
+        self.space_mouse.cursor_moved.connect(self.data.setTrack0)
+
     def exitActionCallback(self, s):
         self.close()
 
     def saveActionCallback(self):
-        fileName = QFileDialog.getSaveFileName(self, 'Save File',
-                                               self._previous_save_filename, "Lighthouse Save Files (*.lho)")[0]
+        fileName = QFileDialog.getSaveFileName(
+            self, "Save File", self._previous_save_filename, "Lighthouse Save Files (*.lho)"
+        )[0]
         print(fileName)
-        file = open(fileName, 'wb')
+        file = open(fileName, "wb")
         pickle.dump(self.data.serialise(), file)
         file.close()
 
     def openActionCallback(self):
-        fileName = QFileDialog.getOpenFileName(self, 'Open File')[0]
+        fileName = QFileDialog.getOpenFileName(self, "Open File")[0]
         print(fileName)
         self.data.deserialise(fileName)
         self._previous_save_filename = fileName
@@ -221,7 +237,7 @@ class App(QMainWindow):
         brush.setColor(QColor(0, 0, 0, 0))
         painter.setBrush(brush)
 
-        painter.drawEllipse(self.data.getTrack2D(0), 50, 50)
+        painter.drawEllipse(self.data.getTrack2D(0), 30, 30)
 
         painter.end()
 
