@@ -8,13 +8,13 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QHBoxLayout,
     QCheckBox,
-    QSlider,
+    QSlider, QPushButton,
 )
 from PySide6.QtCore import Signal, Slot, Qt
-from PySide6.QtGui import QVector3D, QVector2D
+from PySide6.QtGui import QVector3D, QVector2D, QIconEngine, QIcon
 
 from data_store import HomographyPoint
-from settings_dialogs import AddNewPointDialog
+from settings_dialogs import AddNewPointDialog, EditPointDialog
 
 
 class DoubleSlider(QSlider):
@@ -23,7 +23,7 @@ class DoubleSlider(QSlider):
 
     def __init__(self, decimals=2, *args, **kargs):
         super(DoubleSlider, self).__init__(*args, **kargs)
-        self._multi = 10**decimals
+        self._multi = 10 ** decimals
 
         self.valueChanged.connect(self.emitDoubleValueChanged)
 
@@ -52,6 +52,8 @@ class DoubleSlider(QSlider):
 
 class SettingsDock(QDockWidget):
     addNewHomographyPoint = Signal(str, HomographyPoint)
+    editHomographyPoint = Signal(str, str, HomographyPoint)
+    removeHomographyPoint = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -69,7 +71,7 @@ class SettingsDock(QDockWidget):
         self.settings_layout.addWidget(self.list_widget)
 
         self.edit_homography_points = QCheckBox("Edit homography points")
-        self.edit_homography_points.setChecked(False)
+        self.edit_homography_points.setChecked(True)
         self.settings_layout.addWidget(self.edit_homography_points)
 
         self.track0 = QLabel("Track 0: 0.0, 0.0")
@@ -84,7 +86,7 @@ class SettingsDock(QDockWidget):
         self.settings_layout.addWidget(self.height_offset)
 
         self.use_space_mouse = QCheckBox("Use SpaceMouse")
-        self.use_space_mouse.setChecked(True)
+        self.use_space_mouse.setChecked(False)
         self.settings_layout.addWidget(self.use_space_mouse)
 
         # track_coord_layout = QHBoxLayout()
@@ -103,9 +105,14 @@ class SettingsDock(QDockWidget):
     @Slot(str, HomographyPoint)
     def addHomographyPoint(self, name, hom):
         item = QListWidgetItem()
+        item.setData(-1, name)
         item_widget = QWidget()
         item_layout = QHBoxLayout()
         item_widget.setLayout(item_layout)
+
+        edit_button = QPushButton("Edit")
+        edit_button.clicked.connect(lambda x: self.editButtonCallback(name, hom))
+        item_layout.addWidget(edit_button)
 
         line_text = QLabel(f"{name} {hom}", objectName=name)
         item_layout.addWidget(line_text)
@@ -151,7 +158,15 @@ class SettingsDock(QDockWidget):
                         break
                 else:
                     self.addHomographyPoint(name, hom)
-
+        if len(homography_points.items()) != self.list_widget.count() - 1:
+            to_remove = []
+            for i in range(self.list_widget.count()):
+                item = self.list_widget.item(i)
+                item_data = item.data(-1)
+                if item_data != "__add_new__" and item_data not in homography_points.keys():
+                    to_remove.append(self.list_widget.row(item))
+            for row in to_remove:
+                self.list_widget.takeItem(row)
 
     @Slot(int, QVector3D)
     def updateTrack(self, id: int, pos: QVector3D):
@@ -161,8 +176,11 @@ class SettingsDock(QDockWidget):
 
     def homographyListClick(self, item: QListWidgetItem):
         if str(item.data(-1)) == "__add_new__":
+            existing_names = [self.list_widget.item(i).data(-1) for i in range(self.list_widget.count())]
             dlg = AddNewPointDialog()
             ret = dlg.exec()
+            while ret and dlg.pt_label_input.text() in existing_names:
+                ret = dlg.exec()
             if ret:
                 new_point = dlg.current_unit_multiplier * QVector3D(
                     float(dlg.x_input.text()), float(dlg.y_input.text()), float(dlg.z_input.text())
@@ -170,3 +188,25 @@ class SettingsDock(QDockWidget):
                 new_homogrphy_pt = HomographyPoint(new_point, QVector2D(0, 0))
                 self.addNewHomographyPoint.emit(dlg.pt_label_input.text(), new_homogrphy_pt)
                 self.addHomographyPoint(dlg.pt_label_input.text(), new_homogrphy_pt)
+
+    @Slot(str, HomographyPoint)
+    def editButtonCallback(self, name: str, hom: HomographyPoint):
+        existing_names = [self.list_widget.item(i).data(-1) for i in range(self.list_widget.count())]
+        dlg = EditPointDialog(name, hom)
+        ret = dlg.exec()
+        # Ensure unique name:
+        while dlg.pt_label_input.text() != name and (ret and dlg.pt_label_input.text() in existing_names):
+            ret = dlg.exec()
+        if ret:
+            # Edit Point
+            new_point = dlg.current_unit_multiplier * QVector3D(
+                float(dlg.x_input.text()), float(dlg.y_input.text()), float(dlg.z_input.text())
+            )
+            if name != dlg.pt_label_input.text() or new_point != hom.world_coord:
+                new_homogrphy_pt = HomographyPoint(new_point, hom.screen_coord)
+                self.editHomographyPoint.emit(name, dlg.pt_label_input.text(), new_homogrphy_pt)
+                print("new")
+
+        elif dlg.delete_status:
+            # Delete Point
+            self.removeHomographyPoint.emit(name)

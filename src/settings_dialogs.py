@@ -1,16 +1,24 @@
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, \
+    QPushButton, QStyle
+from data_store import HomographyPoint
 
 
 class AddNewPointDialog(QDialog):
-    def __init__(self):
+    def __init__(self, edit_mode=False):
         super().__init__()
         self.setWindowTitle("Add New Stage Point")
 
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox()
+        self.create_btn = QPushButton("Create Point")
+        self.cancel_btn = QPushButton("Cancel")
+        self.create_btn.setIcon(self.style().standardIcon(getattr(QStyle, "SP_DialogOkButton")))
+        self.cancel_btn.setIcon(self.style().standardIcon(getattr(QStyle, "SP_DialogCancelButton")))
+        self.buttonBox.addButton(self.cancel_btn, QDialogButtonBox.RejectRole)
+        self.buttonBox.addButton(self.create_btn, QDialogButtonBox.AcceptRole)
 
-        buttonBox = QDialogButtonBox(QBtn)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
 
         verticalLayout = QVBoxLayout()
         verticalLayout.setSpacing(12)
@@ -49,7 +57,7 @@ class AddNewPointDialog(QDialog):
         verticalLayout.addWidget(message)
         verticalLayout.addLayout(horizontalLayout)
         verticalLayout.addLayout(horizontalUnitLayout)
-        verticalLayout.addWidget(buttonBox)
+        verticalLayout.addWidget(self.buttonBox)
 
         self.setLayout(verticalLayout)
 
@@ -57,3 +65,24 @@ class AddNewPointDialog(QDialog):
         multipliers = [1, 10, 1000, 25.4, 304.8, 914.4]
         self.current_unit_multiplier = multipliers[unit_id]
 
+
+class EditPointDialog(AddNewPointDialog):
+    def __init__(self, name: str, hom: HomographyPoint):
+        super().__init__()
+        self.setWindowTitle("Edit Stage Point")
+        self.delete_status = False
+
+        self.pt_label_input.setText(name)
+        self.x_input.setText(str(hom.world_coord.x()))
+        self.y_input.setText(str(hom.world_coord.y()))
+        self.z_input.setText(str(hom.world_coord.z()))
+
+        self.create_btn.setText("Save Edits")
+        self.delete_btn = QPushButton("Delete Point")
+        self.delete_btn.clicked.connect(self.delete_callback)
+        self.create_btn.setIcon(self.style().standardIcon(getattr(QStyle, "SP_DialogSaveButton")))
+        self.delete_btn.setIcon(self.style().standardIcon(getattr(QStyle, "SP_DialogDiscardButton")))
+        self.buttonBox.addButton(self.delete_btn, QDialogButtonBox.RejectRole)
+
+    def delete_callback(self):
+        self.delete_status = True

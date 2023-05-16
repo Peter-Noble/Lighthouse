@@ -31,15 +31,17 @@ class DataStore(QObject):
         self.src_folder = Path(__file__).parents[0]
 
         self._homography_points = {
-            "USL": HomographyPoint(QVector3D(3000, -5000, 0), QVector2D(982, 205)),
-            "USR": HomographyPoint(QVector3D(-3000, -5000, 0), QVector2D(467, 96)),
-            "DSL": HomographyPoint(QVector3D(3000, -11000, 0), QVector2D(801, 676)),
-            "DSR": HomographyPoint(QVector3D(-3000, -11000, 0), QVector2D(70, 410)),
+            # "USL": HomographyPoint(QVector3D(3000, -5000, 0), QVector2D(982, 205)),
+            # "USR": HomographyPoint(QVector3D(-3000, -5000, 0), QVector2D(467, 96)),
+            # "DSL": HomographyPoint(QVector3D(3000, -11000, 0), QVector2D(801, 676)),
+            # "DSR": HomographyPoint(QVector3D(-3000, -11000, 0), QVector2D(70, 410)),
         }
         self._tracks = [QVector3D()]
         self._camera_inv = np.identity(3, dtype=np.float32)
         self._camera_matrix = np.identity(3, dtype=np.float32)  # 3x3 camera matrix
         self._camera_dist = np.zeros(4, dtype=np.float32)  # 4 vector of distortion coefficients
+        self.r_vec = None
+        self.t_vec = None
 
         self.height_offset = 0.0
 
@@ -61,15 +63,14 @@ class DataStore(QObject):
 
     def serialise(self):
         return [self._camera_dist, self._camera_matrix, self._camera_inv,
-                self._homography_points, self._homography, self.t_vec, self.r_vec]
+                self._homography_points, self.t_vec, self.r_vec]
 
     def deserialise(self, fileName):
         file = open(fileName, 'rb')
         (self._camera_dist, self._camera_matrix, self._camera_inv,
-         self._homography_points, self._homography, self.t_vec, self.r_vec) = pickle.load(file)
+         self._homography_points, self.t_vec, self.r_vec) = pickle.load(file)
         file.close()
         self.broadcast()
-
 
     def broadcast(self) -> None:
         self.homography_points_changed.emit(self._homography_points)
@@ -85,9 +86,15 @@ class DataStore(QObject):
     def addNewHomographyPoint(self, name: str, homography: HomographyPoint):
         self._homography_points[name] = homography
 
-    @Slot(str, HomographyPoint)
-    def setHomographyPoint(self, name: str, point: HomographyPoint) -> None:
-        self._homography_points[name] = point
+    @Slot(str, str, HomographyPoint)
+    def setHomographyPoint(self, existing_name: str, updated_name: str, updated_point: HomographyPoint) -> None:
+        self._homography_points.pop(existing_name)
+        self._homography_points[updated_name] = updated_point
+        self.homography_points_changed.emit(self._homography_points)
+
+    @Slot(str)
+    def removeHomographyPoint(self, existing_name: str) -> None:
+        self._homography_points.pop(existing_name)
         self.homography_points_changed.emit(self._homography_points)
 
     @Slot(str, QPoint)
@@ -102,7 +109,8 @@ class DataStore(QObject):
 
         if name != "__add_new__":
             self._homography_points[name].screen_coord = point
-            self.update_homography()
+            if len(self._homography_points) >= 4:
+                self.update_homography()
             self.homography_points_changed.emit(self._homography_points)
 
     @Slot(int, QPoint)
@@ -125,57 +133,57 @@ class DataStore(QObject):
         return self._tracks[id]
 
     def getTrack2D(self, id: int) -> QPoint:
-        pts = np.array([self.getTrack(0).x(), self.getTrack(0).y(), self.getTrack(0).z()])
-        res, _ = cv.projectPoints(pts, self.r_vec, self.t_vec, self._camera_matrix, self._camera_dist)
-        return QPoint(res[0][0][0], res[0][0][1])
+        if self.r_vec is not None and self.t_vec is not None:
+            pts = np.array([self.getTrack(0).x(), self.getTrack(0).y(), self.getTrack(0).z()])
+            res, _ = cv.projectPoints(pts, self.r_vec, self.t_vec, self._camera_matrix, self._camera_dist)
+            return QPoint(res[0][0][0], res[0][0][1])
+        return QPoint(0, 0)
 
     def update_homography(self):
-        stage_corners_pixel_locs = []
-        stage_corners_world_geometry = []
-        for name, hom in self._homography_points.items():
-            stage_corners_world_geometry.append(hom.world_coord.toTuple())
-            stage_corners_pixel_locs.append(hom.screen_coord.toTuple())
-            # print(hom.world_coord.toTuple())
+        if self._homography_points.items():
+            stage_corners_pixel_locs = []
+            stage_corners_world_geometry = []
+            for name, hom in self._homography_points.items():
+                stage_corners_world_geometry.append(hom.world_coord.toTuple())
+                stage_corners_pixel_locs.append(hom.screen_coord.toTuple())
+                # print(hom.world_coord.toTuple())
 
-        src = np.array(np.array(stage_corners_pixel_locs, dtype=np.float32))
-        dst = np.array(np.array(stage_corners_world_geometry, dtype=np.float32))
+            src = np.array(np.array(stage_corners_pixel_locs, dtype=np.float32))
+            dst = np.array(np.array(stage_corners_world_geometry, dtype=np.float32))
 
-        # If calibrated camera, account for distortion parameters:
-        if self._camera_matrix is not None:
-            src = cv.undistortPoints(
-                np.expand_dims(src, axis=1), self._camera_matrix, self._camera_dist, None, self._camera_matrix
+            # If calibrated camera, account for distortion parameters:
+            if self._camera_matrix is not None:
+                src = cv.undistortPoints(
+                    np.expand_dims(src, axis=1), self._camera_matrix, self._camera_dist, None, self._camera_matrix
+                )
+
+            # Calculate relation between real world planar surface of stage and imaging plane (camera sensor)
+            success, r_vec, t_vec = cv.solvePnP(
+                objectPoints=dst,
+                imagePoints=src,
+                cameraMatrix=self._camera_matrix,
+                distCoeffs=self._camera_dist,
+                flags=cv.SOLVEPNP_IPPE,
             )
 
-        # Homography relation between real world planar surface of stage and imaging plane (camera sensor)
-        self._homography, _ = cv.findHomography(src, dst)
-        print("\nHomography from img plane to stage system: \n", self._homography)
+            self.r_vec = r_vec
+            self.t_vec = t_vec
 
-        success, r_vec, t_vec = cv.solvePnP(
-            objectPoints=dst,
-            imagePoints=src,
-            cameraMatrix=self._camera_matrix,
-            distCoeffs=self._camera_dist,
-            flags=cv.SOLVEPNP_IPPE,
-        )
+            rot_m = cv.Rodrigues(r_vec)[0]
 
-        self.r_vec = r_vec
-        self.t_vec = t_vec
+            cam_pos = -np.matrix(rot_m).T * np.matrix(t_vec)
+            cam_pos = np.array(cam_pos.T.tolist()[0])
+            print("\nCamera position within stage system: \n", cam_pos)
 
-        rot_m = cv.Rodrigues(r_vec)[0]
+            transform_M_i = np.empty((4, 4))
+            transform_M_i[:3, :3] = rot_m.T
+            transform_M_i[:3, 3] = cam_pos
+            transform_M_i[3, :] = [0, 0, 0, 1]
 
-        cam_pos = -np.matrix(rot_m).T * np.matrix(t_vec)
-        cam_pos = np.array(cam_pos.T.tolist()[0])
-        print("\nCamera position within stage system: \n", cam_pos)
-
-        transform_M_i = np.empty((4, 4))
-        transform_M_i[:3, :3] = rot_m.T
-        transform_M_i[:3, 3] = cam_pos
-        transform_M_i[3, :] = [0, 0, 0, 1]
-
-        self._camera_inv = transform_M_i
+            self._camera_inv = transform_M_i
 
     def apply_homography(self, screen_point=QPoint) -> QVector3D | None:
-        if self._homography is not None and not np.isnan(self._homography).any():
+        if self._camera_inv != np.identity(3, dtype=np.float32):
             img_pt = screen_point.toTuple()
 
             # If calibrated camera, account for distortion parameters:
@@ -209,3 +217,6 @@ class DataStore(QObject):
             return QVector3D(result[0], result[1], result[2])
         else:
             return None
+
+    def getHomographyPoints(self):
+        return self._homography_points

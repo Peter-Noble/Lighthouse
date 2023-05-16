@@ -95,7 +95,7 @@ class App(QMainWindow):
             "&PSN Settings",
             self,
         )
-        # self.psn_action.triggered.connect(self.psnActionCallback)
+        self.psn_action.triggered.connect(self.psnActionCallback)
         self.change_camera_action = QAction(
             QIcon(str((self.data.src_folder / "images/icons/icons8-documentary-64.png").absolute())),
             "&Change Camera",
@@ -130,6 +130,8 @@ class App(QMainWindow):
         self.video_widget.click_position.connect(self.data.setTrack0)
 
         self.settings_dock.addNewHomographyPoint.connect(self.data.addNewHomographyPoint)
+        self.settings_dock.editHomographyPoint.connect(self.data.setHomographyPoint)
+        self.settings_dock.removeHomographyPoint.connect(self.data.removeHomographyPoint)
 
         self.data.broadcast()
 
@@ -137,8 +139,11 @@ class App(QMainWindow):
         self.psn_output.addTrack()
         self.data.track_changed.connect(self.psn_output.setTrackWithPos)
 
-        self.space_mouse = SpaceMouse(parent=self)
-        self.space_mouse.cursor_moved.connect(self.data.setTrack0)
+        try:
+            self.space_mouse = SpaceMouse(parent=self)
+            self.space_mouse.cursor_moved.connect(self.data.setTrack0)
+        except AttributeError:
+            print("[Error] No 3d input device found")
 
     def exitActionCallback(self, s):
         self.close()
@@ -147,18 +152,21 @@ class App(QMainWindow):
         fileName = QFileDialog.getSaveFileName(
             self, "Save File", self._previous_save_filename, "Lighthouse Save Files (*.lho)"
         )[0]
-        print(fileName)
         file = open(fileName, "wb")
         pickle.dump(self.data.serialise(), file)
         file.close()
 
     def openActionCallback(self):
-        fileName = QFileDialog.getOpenFileName(self, "Open File")[0]
-        print(fileName)
-        self.data.deserialise(fileName)
-        self._previous_save_filename = fileName
+        fileName = QFileDialog.getOpenFileName(
+            self, "Open File", self._previous_save_filename, "Lighthouse Save Files (*.lho)"
+        )[0]
+        if fileName != "":
+            self.data.deserialise(fileName)
+            self._previous_save_filename = fileName
 
     def psnActionCallback(self, s):
+        print(self.data.getHomographyPoints())
+        return
         # Euclidean Coordinates of the tracker current position.
         # Positive x is right, positive y is up and Positive z is depth.
         # Position is expressed in meters (m).
