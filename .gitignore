@@ -8,3 +8,4 @@ src/calibration_files/*
 *.npy
 *.so
 *.lho
+src/dev_status.py

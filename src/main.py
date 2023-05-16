@@ -30,6 +30,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QFileDialog,
+    QDialogButtonBox,
+    QLabel,
+    QDialog,
 )
 
 from camera_select_dialog import CameraSelectDialog
@@ -38,6 +41,35 @@ from video_display_widget import VideoDisplayWidget
 from data_store import DataStore
 from psn_output import PSNOutput
 from space_mouse import SpaceMouse
+
+from dev_status import is_release
+
+
+class ConfirmExitDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Exit?")
+
+        # QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox()
+        ok_btn = self.buttonBox.addButton("Ok", QDialogButtonBox.ButtonRole.AcceptRole)
+        cancel_btn = self.buttonBox.addButton("Cancel", QDialogButtonBox.ButtonRole.RejectRole)
+
+        ok_btn.setAutoDefault(False)
+        ok_btn.setDefault(False)
+
+        cancel_btn.setAutoDefault(True)
+        cancel_btn.setDefault(True)
+
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        self.layout = QVBoxLayout()
+        message = QLabel("Are you sure you want to exit?")
+        self.layout.addWidget(message)
+        self.layout.addWidget(self.buttonBox)
+        self.setLayout(self.layout)
 
 
 class App(QMainWindow):
@@ -254,8 +286,14 @@ class App(QMainWindow):
         # self.videoWidget.videoSink().setVideoFrame(frame)
 
     def closeEvent(self, event):
-        # self.frameProcessor.stop()
-        super().closeEvent(event)
+        if is_release:
+            if ConfirmExitDialog().exec():
+                self.network_settings.close()
+                super().closeEvent(event)
+            else:
+                event.ignore()
+        else:
+            super().closeEvent(event)
 
 
 if __name__ == "__main__":
