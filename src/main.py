@@ -291,7 +291,6 @@ class App(QMainWindow):
     def closeEvent(self, event):
         if is_release:
             if ConfirmExitDialog().exec():
-                self.network_settings.close()
                 super().closeEvent(event)
                 self.cleanup()
             else:

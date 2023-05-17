@@ -25,6 +25,16 @@ class DataStore(QObject):
     track_changed = Signal(int, QVector3D)  # id, screen space pos
     homography_points_changed = Signal(object)  # The dictionary of homography points
 
+    serialise_attributes = [
+        "_camera_dist",
+        "_camera_matrix",
+        "_camera_inv",
+        "_homography_points",
+        "_t_vec",
+        "_r_vec",
+        "_height_offset",
+    ]
+
     def __init__(self):
         super().__init__()
 
@@ -40,10 +50,10 @@ class DataStore(QObject):
         self._camera_inv = np.identity(3, dtype=np.float32)
         self._camera_matrix = np.identity(3, dtype=np.float32)  # 3x3 camera matrix
         self._camera_dist = np.zeros(4, dtype=np.float32)  # 4 vector of distortion coefficients
-        self.r_vec = None
-        self.t_vec = None
+        self._r_vec = None
+        self._t_vec = None
 
-        self.height_offset = 0.0
+        self._height_offset = 0.0
 
         # Attempt to load camera calibration numpy saved files
         calibration_matrix_file_dir = str((self.src_folder / "calibration_files" / "calibration_matrix.npy").absolute())
@@ -62,14 +72,17 @@ class DataStore(QObject):
         self.update_homography()
 
     def serialise(self):
-        return [self._camera_dist, self._camera_matrix, self._camera_inv,
-                self._homography_points, self.t_vec, self.r_vec]
+        return {a: getattr(self, a) for a in self.serialise_attributes}
 
     def deserialise(self, fileName):
-        file = open(fileName, 'rb')
-        (self._camera_dist, self._camera_matrix, self._camera_inv,
-         self._homography_points, self.t_vec, self.r_vec) = pickle.load(file)
+        file = open(fileName, "rb")
+        attributes = pickle.load(file)
         file.close()
+        for a in self.serialise_attributes:
+            if a in attributes:
+                setattr(self, a, attributes[a])
+                if a == "_height_offset":
+                    self.parent().settings_dock.height_offset.setValue(attributes[a])
         self.broadcast()
 
     def broadcast(self) -> None:
@@ -79,7 +92,7 @@ class DataStore(QObject):
 
     @Slot(float)
     def setHeightOffset(self, height: float):
-        self.height_offset = height
+        self._height_offset = height
         print(height)
 
     @Slot(str, QVector3D)
@@ -133,9 +146,9 @@ class DataStore(QObject):
         return self._tracks[id]
 
     def getTrack2D(self, id: int) -> QPoint:
-        if self.r_vec is not None and self.t_vec is not None:
+        if self._r_vec is not None and self._t_vec is not None:
             pts = np.array([self.getTrack(0).x(), self.getTrack(0).y(), self.getTrack(0).z()])
-            res, _ = cv.projectPoints(pts, self.r_vec, self.t_vec, self._camera_matrix, self._camera_dist)
+            res, _ = cv.projectPoints(pts, self._r_vec, self._t_vec, self._camera_matrix, self._camera_dist)
             return QPoint(res[0][0][0], res[0][0][1])
         return QPoint(0, 0)
 
@@ -166,8 +179,8 @@ class DataStore(QObject):
                 flags=cv.SOLVEPNP_IPPE,
             )
 
-            self.r_vec = r_vec
-            self.t_vec = t_vec
+            self._r_vec = r_vec
+            self._t_vec = t_vec
 
             rot_m = cv.Rodrigues(r_vec)[0]
 
@@ -210,7 +223,7 @@ class DataStore(QObject):
             point_in_world_plane = point_in_world_plane[:3] / point_in_world_plane[3]
 
             ray = point_in_world_plane - cam_pos
-            result = planeRayIntersection(cam_pos, ray, self.height_offset)
+            result = planeRayIntersection(cam_pos, ray, self._height_offset)
             if result is None:
                 return None
             # print(f"Pt {screen_point.toTuple()} -> Real World Coords {result}")

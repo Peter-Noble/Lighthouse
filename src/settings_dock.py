@@ -8,7 +8,8 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QHBoxLayout,
     QCheckBox,
-    QSlider, QPushButton,
+    QSlider,
+    QPushButton,
 )
 from PySide6.QtCore import Signal, Slot, Qt
 from PySide6.QtGui import QVector3D, QVector2D, QIconEngine, QIcon
@@ -23,7 +24,7 @@ class DoubleSlider(QSlider):
 
     def __init__(self, decimals=2, *args, **kargs):
         super(DoubleSlider, self).__init__(*args, **kargs)
-        self._multi = 10 ** decimals
+        self._multi = 10**decimals
 
         self.valueChanged.connect(self.emitDoubleValueChanged)
 
@@ -71,7 +72,7 @@ class SettingsDock(QDockWidget):
         self.settings_layout.addWidget(self.list_widget)
 
         self.edit_homography_points = QCheckBox("Edit homography points")
-        self.edit_homography_points.setChecked(True)
+        self.edit_homography_points.setChecked(False)
         self.settings_layout.addWidget(self.edit_homography_points)
 
         self.track0 = QLabel("Track 0: 0.0, 0.0")
