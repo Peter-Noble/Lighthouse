@@ -285,15 +285,20 @@ class App(QMainWindow):
         self.video_widget.setPixmap(pix)
         # self.videoWidget.videoSink().setVideoFrame(frame)
 
+    def cleanup(self):
+        self.space_mouse.cleanup()
+
     def closeEvent(self, event):
         if is_release:
             if ConfirmExitDialog().exec():
                 self.network_settings.close()
                 super().closeEvent(event)
+                self.cleanup()
             else:
                 event.ignore()
         else:
             super().closeEvent(event)
+            self.cleanup()
 
 
 if __name__ == "__main__":

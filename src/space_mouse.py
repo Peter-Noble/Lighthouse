@@ -10,6 +10,7 @@ class SpaceMouse(QObject):
         super().__init__(*args, **kwargs)
         self.pos = QVector2D(0, 0)
 
+        self.active = False
         self.device = pyspacemouse.open()
 
         self.roll = 0
@@ -30,19 +31,13 @@ class SpaceMouse(QObject):
         if self.device and self.parent().settings_dock.use_space_mouse.checkState() is Qt.CheckState.Checked:
             state = self.device.read()
             if state:
+                if not self.active:
+                    self.active = True
+                    self.device.set_led(1)
                 self.roll = state.roll
                 self.pitch = state.pitch
                 self.x = state.x
                 self.y = state.y
-
-                # state.x
-                # state.y
-                # state.z
-                # state.roll
-                # state.pitch
-                # state.yaw
-                # state.t
-            # if abs(self.roll) > 0.0 and abs(self.pitch) > 0.0:
             self.pos = self.pos + QVector2D(
                 self.moveCurve(self.roll) + self.x * 2, -self.moveCurve(self.pitch) - self.y * 2
             )
@@ -50,7 +45,11 @@ class SpaceMouse(QObject):
             self.pos.setX(max(0, min(self.pos.x(), res.width())))
             self.pos.setY(max(0, min(self.pos.y(), res.height())))
             self.cursor_moved.emit(QPoint(self.pos.x(), self.pos.y()))
-            # print(self.pos)
-            # print(
-            #     " ".join(["%4s %+.2f" % (k, getattr(state, k)) for k in ["x", "y", "z", "roll", "pitch", "yaw", "t"]])
-            # )
+        else:
+            if self.active:
+                self.active = False
+                self.device.set_led(0)
+
+    def cleanup(self):
+        self.device.set_led(0)
+        self.device.close()
