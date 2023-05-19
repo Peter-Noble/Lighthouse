@@ -303,5 +303,7 @@ class App(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     a = App()
+    app.setWindowIcon(QIcon(str((a.data.src_folder / "images/icons/icons8-lighthouse-64.png").absolute())))
+
     a.show()
     sys.exit(app.exec())
