@@ -2,6 +2,8 @@ import pyspacemouse
 from PySide6.QtCore import Slot, QObject, QTimer, Signal, QPoint, Qt
 from PySide6.QtGui import QVector3D, QVector2D
 
+import math
+
 
 class SpaceMouse(QObject):
     cursor_moved = Signal(QPoint)
@@ -25,7 +27,7 @@ class SpaceMouse(QObject):
             self.timer.start(1000 / update_frequency)
 
     def moveCurve(self, x):
-        return 6 * x**3 + 1 * x
+        return 3 * x**3 + math.copysign(3 * x**2, x) + 1 * x
 
     def update(self):
         if self.device and self.parent().settings_dock.use_space_mouse.checkState() is Qt.CheckState.Checked:
