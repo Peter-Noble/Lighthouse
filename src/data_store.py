@@ -82,7 +82,7 @@ class DataStore(QObject):
             if a in attributes:
                 setattr(self, a, attributes[a])
                 if a == "_height_offset":
-                    self.parent().settings_dock.height_offset.setValue(attributes[a])
+                    self.parent().geometry_settings_dock.height_offset.setValue(attributes[a])
         self.broadcast()
 
     def broadcast(self) -> None:
@@ -112,7 +112,7 @@ class DataStore(QObject):
 
     @Slot(str, QPoint)
     def setHomographyScreenPoint(self, point: QPoint) -> None:
-        settings_dock = self.parent().settings_dock
+        settings_dock = self.parent().geometry_settings_dock
 
         if settings_dock.edit_homography_points.checkState() is Qt.CheckState.Unchecked:
             return
@@ -128,7 +128,7 @@ class DataStore(QObject):
 
     @Slot(int, QPoint)
     def setTrack(self, id: int, point: QPoint) -> None:
-        if self.parent().settings_dock.edit_homography_points.checkState() is Qt.CheckState.Unchecked:
+        if self.parent().geometry_settings_dock.edit_homography_points.checkState() is Qt.CheckState.Unchecked:
             new_target = self.apply_homography(point)
             if new_target is not None:
                 self._tracks[id] = new_target
@@ -136,7 +136,7 @@ class DataStore(QObject):
 
     @Slot(QPoint)
     def setTrack0(self, point: QPoint) -> None:
-        if self.parent().settings_dock.edit_homography_points.checkState() is Qt.CheckState.Unchecked:
+        if self.parent().geometry_settings_dock.edit_homography_points.checkState() is Qt.CheckState.Unchecked:
             new_target = self.apply_homography(point)
             if new_target is not None:
                 self._tracks[0] = new_target

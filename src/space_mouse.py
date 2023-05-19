@@ -30,7 +30,7 @@ class SpaceMouse(QObject):
         return 3 * x**3 + math.copysign(3 * x**2, x) + 1 * x
 
     def update(self):
-        if self.device and self.parent().settings_dock.use_space_mouse.checkState() is Qt.CheckState.Checked:
+        if self.device and self.parent().geometry_settings_dock.use_space_mouse.checkState() is Qt.CheckState.Checked:
             state = self.device.read()
             if state:
                 if not self.active:

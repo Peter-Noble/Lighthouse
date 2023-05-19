@@ -36,11 +36,14 @@ from PySide6.QtWidgets import (
 )
 
 from camera_select_dialog import CameraSelectDialog
-from settings_dock import SettingsDock
+from geometry_settings_dock import GeometrySettingsDock
+from fixture_settings_dock import FixtureSettingsDock
+from track_settings_dock import TrackSettingsDock
 from video_display_widget import VideoDisplayWidget
 from data_store import DataStore
 from psn_output import PSNOutput
 from space_mouse import SpaceMouse
+from network_settings import NetworkSettings
 
 from dev_status import is_release
 
@@ -105,6 +108,16 @@ class App(QMainWindow):
 
         self.camera.start()
 
+        self.network_settings = NetworkSettings()
+
+        self.geometry_settings_dock = GeometrySettingsDock(parent=self)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.geometry_settings_dock)
+        self.fixture_settings_dock = FixtureSettingsDock(parent=self)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.fixture_settings_dock)
+        self.track_settings_dock = TrackSettingsDock(parent=self)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.track_settings_dock)
+        # self.settingsDock.track_changed.connect(self.data.setTrack)
+
         # https://icons8.com/icon/set/lighthouse/cotton
         self.lighthouse_action = QAction(
             QIcon(str((self.data.src_folder / "images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self
@@ -118,22 +131,45 @@ class App(QMainWindow):
         )
         self.save_action.triggered.connect(self.saveActionCallback)
         self.save_action.setShortcut("Ctrl+S")
+
         self.open_action = QAction(
             QIcon(str((self.data.src_folder / "images/icons/icons8-folder-64.png").absolute())), "&Open", self
         )
         self.open_action.triggered.connect(self.openActionCallback)
-        self.psn_action = QAction(
-            QIcon(str((self.data.src_folder / "images/icons/icons8-track-order-64.png").absolute())),
-            "&PSN Settings",
-            self,
-        )
-        self.psn_action.triggered.connect(self.psnActionCallback)
+
         self.change_camera_action = QAction(
             QIcon(str((self.data.src_folder / "images/icons/icons8-documentary-64.png").absolute())),
             "&Change Camera",
             self,
         )
         self.change_camera_action.triggered.connect(self.cameraChangedActionCallback)
+
+        self.network_settings_action = QAction(
+            QIcon(str((self.data.src_folder / "images/icons/icons8-network-64.png").absolute())), "&Network", self
+        )
+        self.network_settings_action.triggered.connect(self.network_settings.show)
+
+        self.geometry_settings_action = QAction(
+            self.geometry_settings_dock.icon,
+            "&Geometry settings",
+            self,
+        )
+        self.geometry_settings_action.triggered.connect(self.toggleGeometrySettings)
+
+        self.fixture_settings_action = QAction(
+            self.fixture_settings_dock.icon,
+            "&Fixture settings",
+            self,
+        )
+        self.fixture_settings_action.triggered.connect(self.toggleFixtureSettings)
+
+        self.track_settings_action = QAction(
+            self.track_settings_dock.icon,
+            "&Track Settings",
+            self,
+        )
+        self.track_settings_action.triggered.connect(self.toggleTrackSettings)
+
         self.exit_action = QAction(
             QIcon(str((self.data.src_folder / "images/icons/icons8-cancel-64.png").absolute())), "&Exit", self
         )
@@ -144,26 +180,25 @@ class App(QMainWindow):
         file_tool_bar.addAction(self.new_action)
         file_tool_bar.addAction(self.save_action)
         file_tool_bar.addAction(self.open_action)
-        file_tool_bar.addAction(self.psn_action)
         file_tool_bar.addAction(self.change_camera_action)
+        file_tool_bar.addAction(self.fixture_settings_action)
+        file_tool_bar.addAction(self.track_settings_action)
+        file_tool_bar.addAction(self.geometry_settings_action)
+        file_tool_bar.addAction(self.network_settings_action)
         file_tool_bar.addAction(self.exit_action)
         file_tool_bar.setMovable(False)
 
-        self.settings_dock = SettingsDock()
-        self.addDockWidget(Qt.RightDockWidgetArea, self.settings_dock)
-        # self.settingsDock.track_changed.connect(self.data.setTrack)
+        self.geometry_settings_dock.height_offset.doubleValueChanged.connect(self.data.setHeightOffset)
 
-        self.settings_dock.height_offset.doubleValueChanged.connect(self.data.setHeightOffset)
-
-        self.data.track_changed.connect(self.settings_dock.updateTrack)
-        self.data.homography_points_changed.connect(self.settings_dock.updateHomographyPoints)
+        self.data.track_changed.connect(self.geometry_settings_dock.updateTrack)
+        self.data.homography_points_changed.connect(self.geometry_settings_dock.updateHomographyPoints)
 
         self.video_widget.click_position.connect(self.data.setHomographyScreenPoint)
         self.video_widget.click_position.connect(self.data.setTrack0)
 
-        self.settings_dock.addNewHomographyPoint.connect(self.data.addNewHomographyPoint)
-        self.settings_dock.editHomographyPoint.connect(self.data.setHomographyPoint)
-        self.settings_dock.removeHomographyPoint.connect(self.data.removeHomographyPoint)
+        self.geometry_settings_dock.addNewHomographyPoint.connect(self.data.addNewHomographyPoint)
+        self.geometry_settings_dock.editHomographyPoint.connect(self.data.setHomographyPoint)
+        self.geometry_settings_dock.removeHomographyPoint.connect(self.data.removeHomographyPoint)
 
         self.data.broadcast()
 
@@ -180,6 +215,24 @@ class App(QMainWindow):
     def exitActionCallback(self, s):
         self.close()
 
+    def toggleGeometrySettings(self):
+        if self.geometry_settings_dock.isHidden():
+            self.geometry_settings_dock.show()
+        else:
+            self.geometry_settings_dock.hide()
+
+    def toggleFixtureSettings(self):
+        if self.fixture_settings_dock.isHidden():
+            self.fixture_settings_dock.show()
+        else:
+            self.fixture_settings_dock.hide()
+
+    def toggleTrackSettings(self):
+        if self.track_settings_dock.isHidden():
+            self.track_settings_dock.show()
+        else:
+            self.track_settings_dock.hide()
+
     def saveActionCallback(self):
         fileName = QFileDialog.getSaveFileName(
             self, "Save File", self._previous_save_filename, "Lighthouse Save Files (*.lho)"
@@ -195,41 +248,6 @@ class App(QMainWindow):
         if fileName != "":
             self.data.deserialise(fileName)
             self._previous_save_filename = fileName
-
-    def psnActionCallback(self, s):
-        print(self.data.getHomographyPoints())
-        return
-        # Euclidean Coordinates of the tracker current position.
-        # Positive x is right, positive y is up and Positive z is depth.
-        # Position is expressed in meters (m).
-        pos = QVector3D(0, 0, 0)
-        # Velocity is expressed in meters per second (m/s).
-        # speed = QVector3D(0, 0, 0)
-        speed = None
-        # The tracker current X acceleration.
-        # Acceleration is expressed in meters per second squared.
-        # accel = QVector3D(0, 0, 0)
-        accel = None
-        # A vector indicating an axis around which the tracker is rotated.
-        # The vector’s length is the amount of rotation in radians.
-        # The orientation is absolute and not cumulated from packet to packet.
-        # ori = QVector3D(0, 0, 0)
-        ori = None
-        # A 32-bit float representing the tracker’s validity.
-        # status = 0
-        status = None
-        # Position of the target that the tracker is trying to reach.
-        # Position is expressed in meters.
-        # target_pos = QVector3D(0, 0, 0)
-        target_pos = None
-        # This is the number of microseconds elapsed since the PSN server
-        # was started to the moment the tracker position was computed.
-        # Since some trackers can be computed at different times or even
-        # repeated across different frames, this timestamp is usually more accurate.
-        # If this field is not present, you can simply use the packet timestamp as a fallback.
-        # timestamp = 0
-        timestamp = None
-        self.psn_output.setTrack(0, pos, speed, accel, ori, status, target_pos, timestamp)
 
     def initCamera(self, id=-1):
         # TODO a bit of a crude way to achieve this.
@@ -286,6 +304,7 @@ class App(QMainWindow):
         # self.videoWidget.videoSink().setVideoFrame(frame)
 
     def cleanup(self):
+        self.network_settings.close()
         self.space_mouse.cleanup()
 
     def closeEvent(self, event):
