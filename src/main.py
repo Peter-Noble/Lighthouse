@@ -77,47 +77,59 @@ class ConfirmExitDialog(QDialog):
 
 class App(QMainWindow):
     def __init__(self):
+        print("[startup] Creating the main window")
         super().__init__()
         self.setWindowTitle("Lighthouse")
         self.resize(800, 400)
 
         # self.setWindowFlags(Qt.FramelessWindowHint)
 
+        print("[startup] Creating the data store")
         self.data = DataStore()
         self.data.setParent(self)
 
         self._previous_save_filename = str((self.data.src_folder / "showfile.lho").absolute())
 
+        print("[startup] Creating central widget and layout")
         vbox = QVBoxLayout()
-
         central = QWidget()
         central.setLayout(vbox)
         self.setCentralWidget(central)
 
+        print("[startup] Creating video display")
         self.video_widget = VideoDisplayWidget()
         vbox.addWidget(self.video_widget)
 
+        print("[startup] Creating camera")
         self.camera = QCamera()
+        print("[startup] Creating capture session")
         self.capture_session = QMediaCaptureSession()
+        print("[startup] Creating video sink")
         self.camera_video_sink = QVideoSink()
 
+        print("[startup] Setting capture session camera")
         self.capture_session.setCamera(self.camera)
-
+        print("[startup] Setting capture session video sink")
         self.capture_session.setVideoSink(self.camera_video_sink)
+        print("[startup] Attaching new frame callback")
         self.camera_video_sink.videoFrameChanged.connect(self.displayVideoFrame)
 
+        print("[startup] Starting camera")
         self.camera.start()
 
+        print("[startup] Creating settings docks and windows")
         self.network_settings = NetworkSettings()
 
         self.geometry_settings_dock = GeometrySettingsDock(parent=self)
         self.addDockWidget(Qt.RightDockWidgetArea, self.geometry_settings_dock)
+        self.setCorner(Qt.Corner.BottomRightCorner, Qt.RightDockWidgetArea)
         self.fixture_settings_dock = FixtureSettingsDock(parent=self)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.fixture_settings_dock)
         self.track_settings_dock = TrackSettingsDock(parent=self)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.track_settings_dock)
         # self.settingsDock.track_changed.connect(self.data.setTrack)
 
+        print("[startup] Creating action bar")
         # https://icons8.com/icon/set/lighthouse/cotton
         self.lighthouse_action = QAction(
             QIcon(str((self.data.src_folder / "images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self
@@ -188,6 +200,8 @@ class App(QMainWindow):
         file_tool_bar.addAction(self.exit_action)
         file_tool_bar.setMovable(False)
 
+        print("[startup] Connecting slots and signals")
+
         self.geometry_settings_dock.height_offset.doubleValueChanged.connect(self.data.setHeightOffset)
 
         self.data.track_changed.connect(self.geometry_settings_dock.updateTrack)
@@ -202,10 +216,12 @@ class App(QMainWindow):
 
         self.data.broadcast()
 
+        print("[startup] Setting up PSN")
         self.psn_output = PSNOutput()
         self.psn_output.addTrack()
         self.data.track_changed.connect(self.psn_output.setTrackWithPos)
 
+        print("[startup] Setting up SpaceMouse")
         try:
             self.space_mouse = SpaceMouse(parent=self)
             self.space_mouse.cursor_moved.connect(self.data.setTrack0)

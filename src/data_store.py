@@ -1,8 +1,8 @@
 import pickle
 
-from PySide6.QtCore import Signal, Slot, Qt, QPoint, QObject
+from PySide6.QtCore import Signal, Slot, Qt, QPoint, QObject, QAbstractListModel
 from PySide6.QtGui import QVector2D, QVector3D
-from PySide6.QtWidgets import QLabel
+from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QLineEdit, QComboBox
 from pathlib import Path
 import numpy as np
 import cv2 as cv
@@ -21,6 +21,13 @@ class HomographyPoint:
         return w + s
 
 
+class Track:
+    def __init__(self, name: str):
+        self.name = name
+        self.input_device = ""
+        self.height_offset = 0.0
+
+
 class DataStore(QObject):
     track_changed = Signal(int, QVector3D)  # id, screen space pos
     homography_points_changed = Signal(object)  # The dictionary of homography points
@@ -33,6 +40,7 @@ class DataStore(QObject):
         "_t_vec",
         "_r_vec",
         "_height_offset",
+        "tracks",
     ]
 
     def __init__(self):
@@ -52,6 +60,8 @@ class DataStore(QObject):
         self._camera_dist = np.zeros(4, dtype=np.float32)  # 4 vector of distortion coefficients
         self._r_vec = None
         self._t_vec = None
+
+        self.tracks: list[Track] = [Track("Default track"), Track("Default track 2")]
 
         self._height_offset = 0.0
 
