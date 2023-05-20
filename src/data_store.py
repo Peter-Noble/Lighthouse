@@ -55,7 +55,7 @@ class DataStore(QObject):
             # "DSR": HomographyPoint(QVector3D(-3000, -11000, 0), QVector2D(70, 410)),
         }
         self._tracks = [QVector3D()]
-        self._camera_inv = np.identity(3, dtype=np.float32)
+        self._camera_inv = None  # np.identity(3, dtype=np.float32)
         self._camera_matrix = np.identity(3, dtype=np.float32)  # 3x3 camera matrix
         self._camera_dist = np.zeros(4, dtype=np.float32)  # 4 vector of distortion coefficients
         self._r_vec = None
@@ -206,7 +206,7 @@ class DataStore(QObject):
             self._camera_inv = transform_M_i
 
     def apply_homography(self, screen_point=QPoint) -> QVector3D | None:
-        if self._camera_inv != np.identity(3, dtype=np.float32):
+        if self._camera_inv is not None:
             img_pt = screen_point.toTuple()
 
             # If calibrated camera, account for distortion parameters:
