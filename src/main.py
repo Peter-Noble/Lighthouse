@@ -323,7 +323,8 @@ class App(QMainWindow):
 
     def cleanup(self):
         self.network_settings.close()
-        self.space_mouse.cleanup()
+        for mouse in self.space_mice:
+            mouse.cleanup()
 
     def closeEvent(self, event):
         if is_release:
