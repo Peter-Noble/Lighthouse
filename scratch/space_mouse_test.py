@@ -1,40 +1,30 @@
 import pyspacemouse
 import time
+import threading
 
 
-def button_0(state, buttons, pressed_buttons):
-    print("Button:", pressed_buttons)
+def watch_device(device):
+    print(f"Starting thread with {device.name}")
+    while True:
+        print(device.read())
+        # time.sleep(0.1)
 
 
-def button_0_1(state, buttons, pressed_buttons):
-    print("Buttons:", pressed_buttons)
+def main():
+    devices = pyspacemouse.open_all()
 
-
-def someButton(state, buttons):
-    print("Some button")
-
-
-def print_state(state):
-    """Simple default DoF callback
-    Print all axis to output
-    """
-    if state:
-        print(" ".join(["%4s %+.2f" % (k, getattr(state, k)) for k in ["x", "y", "z", "roll", "pitch", "yaw", "t"]]))
-
-
-def callback():
-    button_arr = [
-        pyspacemouse.ButtonCallback(0, button_0),
-        pyspacemouse.ButtonCallback([1], lambda state, buttons, pressed_buttons: print("Button: 1")),
-        pyspacemouse.ButtonCallback([0, 1], button_0_1),
-    ]
-
-    success = pyspacemouse.open(dof_callback=print_state, button_callback=someButton, button_callback_arr=button_arr)
-    if success:
-        while True:
-            pyspacemouse.read()
-            time.sleep(0.01)
+    if all([device for device in devices]):
+        for device in devices:
+            device.set_led(0)
+        time.sleep(1)
+        for device in devices:
+            device.set_led(1)
+        threads = [threading.Thread(target=watch_device, args=[device]) for device in devices]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
 
 
 if __name__ == "__main__":
-    callback()
+    main()

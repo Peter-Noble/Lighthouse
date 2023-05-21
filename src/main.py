@@ -42,7 +42,7 @@ from track_settings_dock import TrackSettingsDock
 from video_display_widget import VideoDisplayWidget
 from data_store import DataStore
 from psn_output import PSNOutput
-from space_mouse import SpaceMouse
+from space_mouse import SpaceMouse, createAllSpaceMice
 from network_settings import NetworkSettings
 
 from dev_status import is_release
@@ -127,7 +127,6 @@ class App(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self.fixture_settings_dock)
         self.track_settings_dock = TrackSettingsDock(parent=self)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.track_settings_dock)
-        # self.settingsDock.track_changed.connect(self.data.setTrack)
 
         print("[startup] Creating action bar")
         # https://icons8.com/icon/set/lighthouse/cotton
@@ -219,12 +218,14 @@ class App(QMainWindow):
         print("[startup] Setting up PSN")
         self.psn_output = PSNOutput()
         self.psn_output.addTrack()
+        self.psn_output.addTrack()
         self.data.track_changed.connect(self.psn_output.setTrackWithPos)
 
         print("[startup] Setting up SpaceMouse")
         try:
-            self.space_mouse = SpaceMouse(parent=self)
-            self.space_mouse.cursor_moved.connect(self.data.setTrack0)
+            self.space_mice = createAllSpaceMice(self)
+            for mouse in self.space_mice:
+                mouse.watcher.cursor_moved.connect(self.data.setTrack)
         except AttributeError:
             print("[Error] No 3d input device found")
 
@@ -311,7 +312,8 @@ class App(QMainWindow):
         brush.setColor(QColor(0, 0, 0, 0))
         painter.setBrush(brush)
 
-        painter.drawEllipse(self.data.getTrack2D(0), 30, 30)
+        for t in range(self.data.getNumTracks()):
+            painter.drawEllipse(self.data.getTrack2D(t), 30, 30)
 
         painter.end()
 

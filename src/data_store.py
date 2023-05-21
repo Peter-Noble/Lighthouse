@@ -9,6 +9,8 @@ import cv2 as cv
 
 from plane_ray_intersection import planeRayIntersection
 
+# import ptvsd  # ptvsd.debug_this_thread()
+
 
 class HomographyPoint:
     def __init__(self, world_coord=QVector3D(), screen_coord=QVector2D()):
@@ -54,7 +56,7 @@ class DataStore(QObject):
             # "DSL": HomographyPoint(QVector3D(3000, -11000, 0), QVector2D(801, 676)),
             # "DSR": HomographyPoint(QVector3D(-3000, -11000, 0), QVector2D(70, 410)),
         }
-        self._tracks = [QVector3D()]
+        self._tracks = [QVector3D(), QVector3D()]
         self._camera_inv = None  # np.identity(3, dtype=np.float32)
         self._camera_matrix = np.identity(3, dtype=np.float32)  # 3x3 camera matrix
         self._camera_dist = np.zeros(4, dtype=np.float32)  # 4 vector of distortion coefficients
@@ -139,10 +141,11 @@ class DataStore(QObject):
     @Slot(int, QPoint)
     def setTrack(self, id: int, point: QPoint) -> None:
         if self.parent().geometry_settings_dock.edit_homography_points.checkState() is Qt.CheckState.Unchecked:
-            new_target = self.apply_homography(point)
-            if new_target is not None:
-                self._tracks[id] = new_target
-                self.track_changed.emit(id, self._tracks[id])
+            if id < len(self._tracks):
+                new_target = self.apply_homography(point)
+                if new_target is not None:
+                    self._tracks[id] = new_target
+                    self.track_changed.emit(id, self._tracks[id])
 
     @Slot(QPoint)
     def setTrack0(self, point: QPoint) -> None:
@@ -157,10 +160,14 @@ class DataStore(QObject):
 
     def getTrack2D(self, id: int) -> QPoint:
         if self._r_vec is not None and self._t_vec is not None:
-            pts = np.array([self.getTrack(0).x(), self.getTrack(0).y(), self.getTrack(0).z()])
+            track = self.getTrack(id)
+            pts = np.array([track.x(), track.y(), track.z()])
             res, _ = cv.projectPoints(pts, self._r_vec, self._t_vec, self._camera_matrix, self._camera_dist)
             return QPoint(res[0][0][0], res[0][0][1])
         return QPoint(0, 0)
+
+    def getNumTracks(self) -> int:
+        return len(self._tracks)
 
     def update_homography(self):
         if self._homography_points.items():
