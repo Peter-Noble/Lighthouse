@@ -164,7 +164,9 @@ class DataStore(QObject):
             track = self.getTrack(id)
             pts = np.array([track.x(), track.y(), track.z()])
             res, _ = cv.projectPoints(pts, self._r_vec, self._t_vec, self._camera_matrix, self._camera_dist)
-            pts = np.array([track.x(), track.y(), track.z() - 1000])  # TODO subtract height offset in here
+            pts = np.array(
+                [track.x(), track.y(), track.z() - self._height_offset * 1000]
+            )  # TODO subtract height offset in here
             res2, _ = cv.projectPoints(pts, self._r_vec, self._t_vec, self._camera_matrix, self._camera_dist)
             return (QVector2D(res2[0][0][0], res2[0][0][1]), QVector2D(res[0][0][0], res[0][0][1]))
         return (QVector2D(0, 0), QVector2D(0, 0))

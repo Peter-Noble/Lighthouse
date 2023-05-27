@@ -47,7 +47,7 @@ class VideoDisplayWidget(QGraphicsView):
     def addTrack(self) -> None:
         pen = QPen()
         pen.setColor(QColor(255, 0, 0))
-        pen.setWidth(1)
+        pen.setWidth(3)
 
         brush = QBrush()
         brush.setColor(QColor(0, 0, 0, 0))
@@ -66,7 +66,6 @@ class VideoDisplayWidget(QGraphicsView):
     @Slot(int, QPoint)
     def updateTrack(self, id):
         c: Tuple[QVector2D, QVector2D] = self.main_window.data.getTrack2D(id)
-        print("C", c)
 
         r = 30
 
