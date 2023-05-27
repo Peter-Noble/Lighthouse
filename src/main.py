@@ -228,7 +228,7 @@ class App(QMainWindow):
         self.data.track_changed.connect(self.geometry_settings_dock.updateTrack)
         self.data.homography_points_changed.connect(self.geometry_settings_dock.updateHomographyPoints)
 
-        # self.video_widget.click_position.connect(self.data.setHomographyScreenPoint)
+        self.video_widget.click_position.connect(self.data.setHomographyScreenPoint)
         # self.video_widget.click_position.connect(self.data.setTrack0)
 
         self.geometry_settings_dock.addNewHomographyPoint.connect(self.data.addNewHomographyPoint)
