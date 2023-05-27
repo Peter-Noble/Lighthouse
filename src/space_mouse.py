@@ -48,9 +48,11 @@ class SpaceMouseWatcher(QThread):
 
                 emit_t_diff = current_time - self.last_emit_change
 
+                linear_sensitivity = 1
+
                 self.pos = self.pos + QVector2D(
-                    (self.moveCurve(self.roll) + self.x * 2) * update_t_diff * 100,
-                    (-self.moveCurve(self.pitch) - self.y * 2) * update_t_diff * 100,
+                    (self.moveCurve(self.roll) + self.x * linear_sensitivity) * update_t_diff * 100,
+                    (-self.moveCurve(self.pitch) - self.y * linear_sensitivity) * update_t_diff * 100,
                 )
                 # res: QSize = self.parent().parent().video_widget.originalPixmap().size()
                 res: QSize = self.parent().parent().video_widget.video_resolution
