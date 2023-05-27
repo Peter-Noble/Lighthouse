@@ -84,11 +84,39 @@ class DataStore(QObject):
 
         self.update_homography()
 
+    def write_previous_config(self, filename: str):
+        conf_filename = self.src_folder.parent / "Projects/.conf"
+        try:
+            file = open(conf_filename, "w")
+        except FileNotFoundError:
+            return
+        file.write(filename)
+        file.close()
+
+    def find_previous_config(self):
+        conf_filename = self.src_folder.parent / "Projects/.conf"
+        try:
+            file = open(conf_filename, "r")
+        except FileNotFoundError:
+            return
+        contents = file.readline()
+        file.close()
+
+        my_file = Path(contents)
+        if my_file.is_file():
+            self.deserialise(str(my_file))
+        else:
+            print("Cannot find file:", my_file)
+
+
     def serialise(self):
         return {a: getattr(self, a) for a in self.serialise_attributes}
 
     def deserialise(self, fileName):
-        file = open(fileName, "rb")
+        try:
+            file = open(fileName, "rb")
+        except FileNotFoundError:
+            return
         attributes = pickle.load(file)
         file.close()
         for a in self.serialise_attributes:

@@ -3,6 +3,7 @@
 .idea/*
 psn-py/*
 src/calibration_files/*
+Projects/*
 *.DS_Store
 *.pyc
 *.npy

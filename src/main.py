@@ -251,6 +251,8 @@ class App(QMainWindow):
         except AttributeError as e:
             print("[Error] No 3d input device found", e)
 
+        self.data.find_previous_config()
+
     def exitActionCallback(self, s):
         self.close()
 
@@ -283,6 +285,7 @@ class App(QMainWindow):
             file.close()
             self._previous_save_filedir = Path(fileName).parents[0]
             self._previous_save_filename = Path(fileName).name
+            self.data.write_previous_config(fileName)
 
     def openActionCallback(self):
         fileName = QFileDialog.getOpenFileName(
@@ -294,6 +297,7 @@ class App(QMainWindow):
             self.data.deserialise(fileName)
             self._previous_save_filedir = Path(fileName).parents[0]
             self._previous_save_filename = Path(fileName).name
+            self.data.write_previous_config(fileName)
 
     def initCamera(self, id=-1):
         # TODO a bit of a crude way to achieve this.
