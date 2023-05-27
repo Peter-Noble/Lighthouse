@@ -52,7 +52,8 @@ class SpaceMouseWatcher(QThread):
                     (self.moveCurve(self.roll) + self.x * 2) * update_t_diff * 100,
                     (-self.moveCurve(self.pitch) - self.y * 2) * update_t_diff * 100,
                 )
-                res: QSize = self.parent().parent().video_widget.originalPixmap().size()
+                # res: QSize = self.parent().parent().video_widget.originalPixmap().size()
+                res: QSize = self.parent().parent().video_widget.video_resolution
                 self.pos.setX(max(0, min(self.pos.x(), res.width())))
                 self.pos.setY(max(0, min(self.pos.y(), res.height())))
 

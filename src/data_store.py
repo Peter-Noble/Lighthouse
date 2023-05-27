@@ -1,4 +1,5 @@
 import pickle
+from typing import Tuple
 
 from PySide6.QtCore import Signal, Slot, Qt, QPoint, QObject, QAbstractListModel
 from PySide6.QtGui import QVector2D, QVector3D
@@ -158,13 +159,15 @@ class DataStore(QObject):
     def getTrack(self, id: int) -> QVector3D:
         return self._tracks[id]
 
-    def getTrack2D(self, id: int) -> QPoint:
+    def getTrack2D(self, id: int) -> Tuple[QVector2D, QVector2D]:
         if self._r_vec is not None and self._t_vec is not None:
             track = self.getTrack(id)
             pts = np.array([track.x(), track.y(), track.z()])
             res, _ = cv.projectPoints(pts, self._r_vec, self._t_vec, self._camera_matrix, self._camera_dist)
-            return QPoint(res[0][0][0], res[0][0][1])
-        return QPoint(0, 0)
+            pts = np.array([track.x(), track.y(), track.z() - 1000])  # TODO subtract height offset in here
+            res2, _ = cv.projectPoints(pts, self._r_vec, self._t_vec, self._camera_matrix, self._camera_dist)
+            return (QVector2D(res2[0][0][0], res2[0][0][1]), QVector2D(res[0][0][0], res[0][0][1]))
+        return (QVector2D(0, 0), QVector2D(0, 0))
 
     def getNumTracks(self) -> int:
         return len(self._tracks)

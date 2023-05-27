@@ -57,8 +57,10 @@ class GeometrySettingsDock(QDockWidget):
         self.settings_layout.addWidget(self.edit_homography_points)
 
         self.track0 = QLabel("Track 0: 0.0, 0.0")
-        self.tracks = [self.track0]
+        self.track1 = QLabel("Track 0: 0.0, 0.0")
+        self.tracks = [self.track0, self.track1]
         self.settings_layout.addWidget(self.track0)
+        self.settings_layout.addWidget(self.track1)
 
         self.settings_layout.addWidget(QLabel("Height offset"))
         self.height_offset = DoubleSlider(orientation=Qt.Orientation.Horizontal)

@@ -33,7 +33,10 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QLabel,
     QDialog,
+    QGraphicsScene,
+    QGraphicsView,
 )
+from PySide6.QtMultimediaWidgets import QVideoWidget, QGraphicsVideoItem
 
 from camera_select_dialog import CameraSelectDialog
 from geometry_settings_dock import GeometrySettingsDock
@@ -97,22 +100,38 @@ class App(QMainWindow):
         self.setCentralWidget(central)
 
         print("[startup] Creating video display")
-        self.video_widget = VideoDisplayWidget()
+        # self.video_widget = VideoDisplayWidget()
+        # self.video_widget = QVideoWidget()
+        # vbox.addWidget(self.video_widget)
+
+        self.video_widget = VideoDisplayWidget(parent=self)
+        self.video_widget.addTrack()
+        self.video_widget.addTrack()
         vbox.addWidget(self.video_widget)
+        self.data.track_changed.connect(self.video_widget.updateTrack)
+        # self.video_scene = QGraphicsScene()
+        # self.video_view = QGraphicsView()
+        # self.video_widget.video_view.setScene(self.video_scene)
+        # vbox.addWidget(self.video_view)
 
         print("[startup] Creating camera")
         self.camera = QCamera()
         print("[startup] Creating capture session")
         self.capture_session = QMediaCaptureSession()
-        print("[startup] Creating video sink")
-        self.camera_video_sink = QVideoSink()
+        # print("[startup] Creating video sink")
+        # self.camera_video_sink = QVideoSink()
+
+        self.video_widget.setVideoInput(self.capture_session)
 
         print("[startup] Setting capture session camera")
         self.capture_session.setCamera(self.camera)
-        print("[startup] Setting capture session video sink")
-        self.capture_session.setVideoSink(self.camera_video_sink)
-        print("[startup] Attaching new frame callback")
-        self.camera_video_sink.videoFrameChanged.connect(self.displayVideoFrame)
+        # print("[startup] Setting capture session video sink")
+        # self.capture_session.setVideoSink(self.camera_video_sink)
+        # print("[startup] Attaching new frame callback")
+        # self.camera_video_sink.videoFrameChanged.connect(self.displayVideoFrame)
+        # self.capture_session.setVideoOutput(self.video_widget)
+
+        # self.video_view.fitInView(self.video_item)
 
         print("[startup] Starting camera")
         self.camera.start()
@@ -133,6 +152,7 @@ class App(QMainWindow):
         self.lighthouse_action = QAction(
             QIcon(str((self.data.src_folder / "images/icons/icons8-lighthouse-64.png").absolute())), "&Lighthouse", self
         )
+        self.lighthouse_action.triggered.connect(self.video_widget.fitView)
         self.new_action = QAction(
             QIcon(str((self.data.src_folder / "images/icons/icons8-one-page-64.png").absolute())), "&New", self
         )
@@ -206,8 +226,8 @@ class App(QMainWindow):
         self.data.track_changed.connect(self.geometry_settings_dock.updateTrack)
         self.data.homography_points_changed.connect(self.geometry_settings_dock.updateHomographyPoints)
 
-        self.video_widget.click_position.connect(self.data.setHomographyScreenPoint)
-        self.video_widget.click_position.connect(self.data.setTrack0)
+        # self.video_widget.click_position.connect(self.data.setHomographyScreenPoint)
+        # self.video_widget.click_position.connect(self.data.setTrack0)
 
         self.geometry_settings_dock.addNewHomographyPoint.connect(self.data.addNewHomographyPoint)
         self.geometry_settings_dock.editHomographyPoint.connect(self.data.setHomographyPoint)
@@ -273,10 +293,10 @@ class App(QMainWindow):
         if hasattr(self, "camera"):
             self.camera.stop()
             del self.camera
-        if hasattr(self, "captureSession"):
-            del self.capture_session
-        if hasattr(self, "cameraVideoSink"):
-            del self.camera_video_sink
+        # if hasattr(self, "captureSession"):
+        #     del self.capture_session
+        # if hasattr(self, "cameraVideoSink"):
+        #     del self.camera_video_sink
 
         if id == -1:
             self.camera = QCamera()
@@ -284,8 +304,8 @@ class App(QMainWindow):
             self.camera = QCamera(QMediaDevices.videoInputs()[id])
 
         self.capture_session.setCamera(self.camera)
-        self.capture_session.setVideoSink(self.camera_video_sink)
-        self.camera_video_sink.videoFrameChanged.connect(self.displayVideoFrame)
+        # self.capture_session.setVideoSink(self.camera_video_sink)
+        # self.camera_video_sink.videoFrameChanged.connect(self.displayVideoFrame)
         self.camera.start()
 
     def cameraChangedActionCallback(self, s):
@@ -293,33 +313,33 @@ class App(QMainWindow):
         if dialog.exec():
             self.initCamera(dialog.getCameraId())
 
-    @Slot(QVideoFrame)
-    def displayVideoFrame(self, frame: QVideoFrame):
-        # image_as_numpy_array = qimage2ndarray.rgb_view(frame.toImage(), byteorder=None)
-        img = frame.toImage()
+    # @Slot(QVideoFrame)
+    # def displayVideoFrame(self, frame: QVideoFrame):
+    #     # image_as_numpy_array = qimage2ndarray.rgb_view(frame.toImage(), byteorder=None)
+    #     img = frame.toImage()
 
-        painter = QPainter(img)
+    #     painter = QPainter(img)
 
-        painter.setRenderHints(QPainter.Antialiasing, True)
-        # set the brush and pen to the same color
-        painter.setBrush(QColor(255, 0, 0))
-        pen = QPen()
-        pen.setColor(QColor(255, 0, 0))
-        pen.setWidth(3)
-        painter.setPen(pen)
+    #     painter.setRenderHints(QPainter.Antialiasing, True)
+    #     # set the brush and pen to the same color
+    #     painter.setBrush(QColor(255, 0, 0))
+    #     pen = QPen()
+    #     pen.setColor(QColor(255, 0, 0))
+    #     pen.setWidth(3)
+    #     painter.setPen(pen)
 
-        brush = QBrush()
-        brush.setColor(QColor(0, 0, 0, 0))
-        painter.setBrush(brush)
+    #     brush = QBrush()
+    #     brush.setColor(QColor(0, 0, 0, 0))
+    #     painter.setBrush(brush)
 
-        for t in range(self.data.getNumTracks()):
-            painter.drawEllipse(self.data.getTrack2D(t), 30, 30)
+    #     for t in range(self.data.getNumTracks()):
+    #         painter.drawEllipse(self.data.getTrack2D(t), 30, 30)
 
-        painter.end()
+    #     painter.end()
 
-        pix = QPixmap.fromImage(img)
-        self.video_widget.setPixmap(pix)
-        # self.videoWidget.videoSink().setVideoFrame(frame)
+    #     pix = QPixmap.fromImage(img)
+    #     self.video_widget.setPixmap(pix)
+    #     # self.videoWidget.videoSink().setVideoFrame(frame)
 
     def cleanup(self):
         self.network_settings.close()
