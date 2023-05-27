@@ -1,12 +1,13 @@
 import os
 import pickle
 import sys
+from pathlib import Path
 
 # import ptvsd  # ptvsd.debug_this_thread()
 
 os.environ["QT_DRIVER"] = "PySide6"
 
-from PySide6.QtCore import Slot, Qt
+from PySide6.QtCore import Slot, Qt, QDir
 from PySide6.QtGui import (
     QAction,
     QIcon,
@@ -91,7 +92,8 @@ class App(QMainWindow):
         self.data = DataStore()
         self.data.setParent(self)
 
-        self._previous_save_filename = str((self.data.src_folder / "showfile.lho").absolute())
+        self._previous_save_filename = "showfile.lho"
+        self._previous_save_filedir = self.data.src_folder.parents[0] / "Projects"
 
         print("[startup] Creating central widget and layout")
         vbox = QVBoxLayout()
@@ -246,8 +248,8 @@ class App(QMainWindow):
             self.space_mice = createAllSpaceMice(self)
             for mouse in self.space_mice:
                 mouse.watcher.cursor_moved.connect(self.data.setTrack)
-        except AttributeError:
-            print("[Error] No 3d input device found")
+        except AttributeError as e:
+            print("[Error] No 3d input device found", e)
 
     def exitActionCallback(self, s):
         self.close()
@@ -272,19 +274,26 @@ class App(QMainWindow):
 
     def saveActionCallback(self):
         fileName = QFileDialog.getSaveFileName(
-            self, "Save File", self._previous_save_filename, "Lighthouse Save Files (*.lho)"
+            self, "Save File", dir=str(self._previous_save_filedir / self._previous_save_filename),
+            filter="Lighthouse Save Files (*.lho)", options=QFileDialog.DontUseNativeDialog
         )[0]
-        file = open(fileName, "wb")
-        pickle.dump(self.data.serialise(), file)
-        file.close()
+        if fileName != "":
+            file = open(fileName, "wb")
+            pickle.dump(self.data.serialise(), file)
+            file.close()
+            self._previous_save_filedir = Path(fileName).parents[0]
+            self._previous_save_filename = Path(fileName).name
 
     def openActionCallback(self):
         fileName = QFileDialog.getOpenFileName(
-            self, "Open File", self._previous_save_filename, "Lighthouse Save Files (*.lho)"
+            self, "Open File", dir=str(self._previous_save_filedir), filter="Lighthouse Save Files (*.lho)",
+            options=QFileDialog.DontUseNativeDialog
         )[0]
         if fileName != "":
+            print(fileName)
             self.data.deserialise(fileName)
-            self._previous_save_filename = fileName
+            self._previous_save_filedir = Path(fileName).parents[0]
+            self._previous_save_filename = Path(fileName).name
 
     def initCamera(self, id=-1):
         # TODO a bit of a crude way to achieve this.

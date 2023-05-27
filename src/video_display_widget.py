@@ -40,10 +40,10 @@ class VideoDisplayWidget(QGraphicsView):
         display_res_y = self.video_item.boundingRect().height()
         x = display_res_x * p.x() / float(video_res.width())
         y = display_res_y * p.y() / float(video_res.height())
-        print("Video_res:", video_res)
-        print("Display_res_xy:", display_res_x, display_res_y)
-        print("p:", p)
-        print("return:", QVector2D(x, y))
+        #print("Video_res:", video_res)
+        #print("Display_res_xy:", display_res_x, display_res_y)
+        #print("p:", p)
+        #print("return:", QVector2D(x, y))
         return QVector2D(x, y)
 
     def addTrack(self) -> None:
